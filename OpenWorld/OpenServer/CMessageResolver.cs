@@ -110,7 +110,7 @@ namespace OpenServer
             int src_position = offset;
 
             // 남은 데이터가 있다면 반복
-            while (true)
+            while (remain_bytes > 0)
             {
                 bool completed = false;
 
