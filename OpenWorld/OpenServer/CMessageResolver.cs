@@ -112,8 +112,61 @@ namespace OpenServer
             // 남은 데이터가 있다면 반복
             while (true)
             {
+                bool completed = false;
 
+                // 헤더만큼 못읽은 경우 헤더를 먼저 읽는다.
+                if (current_position < Defines.HEADERSIZE)
+                {
+                    // 목표지점 설정(헤더 위치까지 도달하도록)
+                    position_to_read = Defines.HEADERSIZE;
+
+                    completed = read_until(buffer, ref src_position, offset, transffered);
+                    if (!completed)
+                    {
+                        // 아직 다 못읽었으므로 다음 receive를 기다린다.
+                        return;
+                    }
+
+                    // 헤더 하나를 온전히 읽어왔으므로 메세지 사이즈를 구한다.
+                    message_size = get_body_size();
+
+                    // 다음 목표 지점(헤더 + 메세지 사이즈)
+                    position_to_read = message_size + Defines.HEADERSIZE;
+                }
+
+                // 메세지를 읽는다.
+                completed = read_until(buffer, ref src_position, offset, transffered);
+
+                if (completed)
+                {
+                    // 패킷 하나를 완성했다.
+                    callback(new Const<byte[]>(message_buffer));
+
+                    clear_buffer();
+                }
             }
+        }
+
+        private int get_body_size()
+        {
+            // 헤더에서 메시지 사이즈를 구한다.  
+            // 헤더 타입은 Int16, Int32두가지가 올 수 있으므로 각각을 구분하여 처리한다.  
+            // 사실 헤더가 바뀔 경우는 없을테니 그냥 한가지로 고정하는편이 깔끔할것 같다.
+            Type type = Defines.HEADERSIZE.GetType();
+            if (type.Equals(typeof(Int16)))
+            {
+                return BitConverter.ToInt16(message_buffer, 0);
+            }
+
+            return BitConverter.ToInt32(message_buffer, 0);
+        }
+
+        private void clear_buffer()
+        {
+            Array.Clear(message_buffer, 0, message_buffer.Length);
+
+            current_position = 0;
+            message_size = 0;
         }
     }
 }
