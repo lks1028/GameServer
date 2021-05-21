@@ -82,7 +82,7 @@ namespace NetService
         }
 
         /// <summary>
-		/// 원격 서버에 접속 성공 했을 때 호출됩니다.
+		/// 클라이언트에서 원격 서버에 접속 성공 했을 때 호출됩니다.
 		/// </summary>
 		/// <param name="socket"></param>
         public void on_connect_completed(Socket socket, CUserToken token)

@@ -9,7 +9,7 @@ namespace ChatServer
 {
     class Program
     {
-        static List<CGameUser> userlist;
+        public static List<CGameUser> userlist;
 
         static void Main(string[] args)
         {
