@@ -58,15 +58,15 @@ namespace ChatServer
 
         public void send(CPacket msg)
         {
-            //token.send(msg);
+            token.send(msg);
 
-            foreach (var otherUserToken in Program.userlist)
-            {
-                if (otherUserToken.token.Equals(token))
-                    continue;
+            //foreach (var otherUserToken in Program.userlist)
+            //{
+            //    if (otherUserToken.token.Equals(token))
+            //        continue;
 
-                otherUserToken.token.send(msg);
-            }
+            //    otherUserToken.token.send(msg);
+            //}
         }
     }
 }
