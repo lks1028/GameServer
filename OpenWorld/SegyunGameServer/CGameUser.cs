@@ -14,6 +14,9 @@ namespace SegyunGameServer
     {
         CUserToken token;
 
+        public CGameRoom battle_room { get; private set; }
+        CPlayer player;
+
         public CGameUser(CUserToken token)
         {
             this.token = token;
@@ -45,12 +48,35 @@ namespace SegyunGameServer
                     Program.game_main.matching_req(this);
 
                     break;
+
+                case PROTOCOL.LOADING_COMPLETED:
+                    battle_room.loading_complete(player);
+
+                    break;
+
+                case PROTOCOL.MOVING_REQ:
+                    short begin_pos = msg.pop_int16();
+                    short target_pos = msg.pop_int16();
+                    battle_room.moving_req(player, begin_pos, target_pos);
+
+                    break;
+
+                case PROTOCOL.TURN_FINISHED_REQ:
+                    battle_room.turn_finished(player);
+
+                    break;
             }
         }
 
         public void send(CPacket msg)
         {
             throw new NotImplementedException();
+        }
+
+        public void enter_room(CPlayer player, CGameRoom room)
+        {
+            this.player = player;
+            battle_room = room;
         }
     }
 }

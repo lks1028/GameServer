@@ -10,7 +10,7 @@ namespace SegyunGameServer
     /// <summary>  
     /// 게임 방 하나를 구성한다. 게임의 로직이 처리되는 핵심 클래스이다.  
     /// </summary> 
-    class CGameRoom
+    public class CGameRoom
     {
         enum PLAYER_STATE : byte
         {
@@ -84,8 +84,18 @@ namespace SegyunGameServer
             change_playerstate(player2, PLAYER_STATE.ENTERED_ROOM);
 
             // 로딩 시작메세지 전송
-            CPacket msg = CPacket.create((short)PROTOCOL.START_LOADING);
-            broadcast(msg);
+            //CPacket msg = CPacket.create((short)PROTOCOL.START_LOADING);
+            //broadcast(msg);
+            players.ForEach(player =>
+            {
+                CPacket msg = CPacket.create((short)PROTOCOL.START_LOADING);
+                // 본인의 플레이어 인덱스를 알림
+                msg.push(player.player_index);
+                player.send(msg);
+            });
+
+            user1.enter_room(player1, this);
+            user2.enter_room(player2, this);
         }
 
         /// <summary>  
@@ -308,7 +318,7 @@ namespace SegyunGameServer
         /// <param name="sender">요청한 유저</param>  
         /// <param name="begin_pos">시작 위치</param>  
         /// <param name="target_pos">이동하고자 하는 위치</param>  
-        public void moving_req(CPlayer sender, byte begin_pos, byte target_pos)
+        public void moving_req(CPlayer sender, short begin_pos, short target_pos)
         {
             // sender차례인지 체크.  
             // 체크 이유 : 현재 자신의 차례가 아님에도 불구하고 이동 요청을 보내온다면 게임의 턴이 엉망이 되어 버릴 것입니다.  
@@ -329,7 +339,7 @@ namespace SegyunGameServer
 
             // 목적지는 0으로 설정된 빈 공간이어야 한다.  
             // 다른 세균이 자리하고 있는 곳으로는 이동할 수 없다.
-            if (gameboard[target_pos] != 0)
+            if (gameboard[target_pos] != EMPTY_SLOT)
             {
                 // 목적지에 다른 세균이 존재한다.
                 return;
@@ -367,7 +377,9 @@ namespace SegyunGameServer
                 put_virus(sender.player_index, target_pos);
             }
 
-            // 세균을 이동하여 로직 처리를 수행한다. 전염시킬 상대방 세균이 있다면 룰에 맞게 전염시킨다.  
+            // 목적지를 기준으로 주위에 존재하는 상대방 세균을 감염시켜 같은 편으로 만든다.
+            CPlayer opponent = get_opponent_player();
+            infect(target_pos, sender, opponent);
 
             // 최종 결과를 모든 클라이언트들에게 전송 한다.  
             CPacket msg = CPacket.create((short)PROTOCOL.PLAYER_MOVED);
@@ -430,12 +442,44 @@ namespace SegyunGameServer
 
         private void game_over()
         {
+            // 우승자 가리기
+            byte win_player_index = byte.MaxValue;
+            int count_1p = players[0].get_virus_count();
+            int count_2p = players[1].get_virus_count();
 
+            if (count_1p == count_2p)
+            {
+                // 동점인 경우
+                win_player_index = byte.MaxValue;
+            }
+            else
+            {
+                if (count_1p > count_2p)
+                {
+                    win_player_index = players[0].player_index;
+                }
+                else
+                {
+                    win_player_index = players[1].player_index;
+                }
+            }
+
+            CPacket msg = CPacket.create((short)PROTOCOL.GAME_OVER);
+            msg.push(win_player_index);
+            msg.push(count_1p);
+            msg.push(count_2p);
+            broadcast(msg);
+
+            // 방 제거
+            Program.game_main.room_manager.remove_room(this);
         }
 
         public void destroy()
         {
+            CPacket msg = CPacket.create((short)PROTOCOL.ROOM_REMOVED);
+            broadcast(msg);
 
+            players.Clear();
         }
     }
 }

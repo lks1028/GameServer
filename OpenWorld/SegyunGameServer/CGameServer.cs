@@ -93,6 +93,12 @@ namespace SegyunGameServer
         /// <param name="user">매칭을 신청한 유저 객체</param>
         public void matching_req(CGameUser user)
         {
+            // 대기 리스트에 중복 추가되지 않도록 체크
+            if (matching_waiting_users.Contains(user))
+            {
+                return;
+            }
+
             // 매칭 대기 리스트에 추가
             matching_waiting_users.Add(user);
 
