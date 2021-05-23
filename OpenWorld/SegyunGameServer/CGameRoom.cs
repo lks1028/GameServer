@@ -433,7 +433,7 @@ namespace SegyunGameServer
 
         }
 
-        private void destroy()
+        public void destroy()
         {
 
         }
