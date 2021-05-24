@@ -51,11 +51,5 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NetService\NetService.csproj">
-      <Project>{e7577660-a37e-46ff-a47c-0cf95040015e}</Project>
-      <Name>NetService</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
