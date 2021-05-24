@@ -1,0 +1,3 @@
+[submodule "NetworkServiceLibrary"]
+	path = NetworkServiceLibrary
+	url = https://github.com/lks1028/NetworkServiceLibrary.git
