@@ -25,17 +25,22 @@ namespace SegyunGameServer
 
         public void disconnect()
         {
-            throw new NotImplementedException();
+            token.socket.Disconnect(false);
         }
 
         public void on_message(Const<byte[]> buffer)
         {
-            throw new NotImplementedException();
+            byte[] clone = new byte[1024];
+            Array.Copy(buffer.Value, clone, buffer.Value.Length);
+            CPacket msg = new CPacket(clone, this);
+            Program.game_main.enqueue_packet(msg, this);
         }
 
         public void on_removed()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("The client disconnected.");
+
+            Program.remove_user(this);
         }
 
         public void process_user_operation(CPacket msg)
@@ -70,7 +75,7 @@ namespace SegyunGameServer
 
         public void send(CPacket msg)
         {
-            throw new NotImplementedException();
+            token.send(msg);
         }
 
         public void enter_room(CPlayer player, CGameRoom room)
