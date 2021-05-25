@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SegyunGameServer", "SegyunGameServer\SegyunGameServer.csproj", "{7955F32A-56EA-4D52-A61C-8B99DC8FE3E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkServiceLibrary", "..\..\NetworkServiceLibrary\NetworkServiceLibrary\NetworkServiceLibrary\NetworkServiceLibrary\NetworkServiceLibrary.csproj", "{73F7EC95-B4FF-49DD-BAB9-4E77A6C0EAC1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkServiceLibrary", "..\NetworkServiceLibrary\NetworkServiceLibrary\NetworkServiceLibrary\NetworkServiceLibrary.csproj", "{73F7EC95-B4FF-49DD-BAB9-4E77A6C0EAC1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
