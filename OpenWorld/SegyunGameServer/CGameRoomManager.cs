@@ -83,12 +83,22 @@ namespace SegyunGameServer
         /// <summary>
         /// 매칭 대기중인 방
         /// </summary>
-        public void match_read_room(CGameUser user)
+        public void match_ready_room(CGameUser user)
         {
             // 대기중인 방에 대한 패킷을 여기서 보내주는게 맞겠지?
             CPacket msg = CPacket.create((short)PROTOCOL.GET_WAITING_ROOM);
 
-            var data = dicRoom.Where(s => s.Value.getplayercount() != 2);
+            // 플레이어의 수가 2미만인 방의 리스트 조회
+            List<CGameRoom> roomlist = dicRoom.Select(s => s.Value).Where(o => o.getplayercount() != 2).ToList();
+            // 총 방의 수를 넣고
+            msg.push(roomlist.Count);
+            // 각 방의 데이터를 넣는다
+            roomlist.ForEach(room =>
+            {
+                // 방 번호라던가, 플레이어의 아이디라던가, 등등....
+                msg.push(room.room_number);
+                //msg.push(room.room_number);
+            });
             //Dictionary<byte, CGameRoom> data = dicRoom.Where(s => s.Value.getplayercount() != 2);
 
             foreach (CGameRoom room in dicRoom.Values)

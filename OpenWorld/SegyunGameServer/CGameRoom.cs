@@ -28,7 +28,7 @@ namespace SegyunGameServer
         }
 
         // 게임방 번호
-        private byte room_number;
+        public byte room_number;
 
         // 게임을 진행하는 플레이어. 1, 2P가 존재
         private List<CPlayer> players;
