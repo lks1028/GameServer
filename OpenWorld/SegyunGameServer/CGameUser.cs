@@ -49,6 +49,25 @@ namespace SegyunGameServer
             Console.WriteLine("protocol id " + protocol);
             switch (protocol)
             {
+                // 대기방 조회
+                case PROTOCOL.GET_WAITING_ROOM:
+                    Program.game_main.GetMatchingRoom(this);
+
+                    break;
+
+                // 방 생성
+                case PROTOCOL.CREATE_ROOM:
+                    Program.game_main.CreateRoom(this);
+
+                    break;
+
+                // 플레이어가 레디함
+                case PROTOCOL.PLAYER_READY:
+                    battle_room.PlayerReady(player);
+
+                    break;
+
+                #region 책에 있던 소스들
                 case PROTOCOL.ENTER_GAME_ROOM_REQ:
                     Program.game_main.matching_req(this);
 
@@ -70,6 +89,7 @@ namespace SegyunGameServer
                     battle_room.turn_finished(player);
 
                     break;
+                #endregion
             }
         }
 

@@ -33,7 +33,6 @@ namespace SegyunGameServer
 		// 상대방 플레이어가 나가 방이 삭제되었다.
 		ROOM_REMOVED = 8,
 
-		// 게임방 입장 요청.
 		ENTER_GAME_ROOM_REQ = 9,
 
 		// 게임 종료.
@@ -42,12 +41,23 @@ namespace SegyunGameServer
 		// 방 입장 후 매칭 대기
 		ENTER_GAME_ROOM_WAITING_USER = 11,
 
-		// 게임방 생성
-		CREATE_ROOM = 12,
 
+		// 100 ~ 110 방 관련
 		// 게임방 생성
-		GET_WAITING_ROOM = 13,
+		CREATE_ROOM = 100,
 
-		END
+		// 대기방 조회
+		GET_WAITING_ROOM = 101,
+
+		// 게임방 입장 요청.
+		ENTER_GAME_ROOM = 102,
+
+		// 게임방 정원이 모두 참
+		FULL_PLAYER_GAME_ROOM = 103,
+
+		// 플레이어가 레디중
+		PLAYER_READY = 104,
+
+		END = 255
 	}
 }

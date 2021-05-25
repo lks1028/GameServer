@@ -23,6 +23,7 @@ namespace SegyunGameServer
         //----------------------------------------------------------------
         // 게임방을 관리하는 매니저.
         public CGameRoomManager room_manager { get; set; }
+        public CGameRoomManager roomManager { get; set; }
 
         // 매칭 대기 리스트.
         private List<CGameUser> matching_waiting_users;
@@ -35,6 +36,7 @@ namespace SegyunGameServer
 
             // 게임 로직 관련
             room_manager = new CGameRoomManager();
+            roomManager = new CGameRoomManager();
             matching_waiting_users = new List<CGameUser>();
 
             logic_thread = new Thread(gameloop);
@@ -119,6 +121,21 @@ namespace SegyunGameServer
             {
                 matching_waiting_users.Remove(user);
             }
+        }
+
+        /// <summary>
+        /// 게임방 조회
+        /// 여기다 해야하는가?
+        /// </summary>
+        /// <param name="user"></param>
+        public void GetMatchingRoom(CGameUser user)
+        {
+            roomManager.GetMatchingRoom(user);
+        }
+
+        public void CreateRoom(CGameUser user)
+        {
+            roomManager.CreateRoom(user);
         }
     }
 }

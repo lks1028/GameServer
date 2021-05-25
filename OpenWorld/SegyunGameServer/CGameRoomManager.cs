@@ -11,13 +11,15 @@ namespace SegyunGameServer
     {
         private List<CGameRoom> rooms;
         // 방 리스트 Key는 방의 번호이다.
-        private Dictionary<byte, CGameRoom> dicRoom;
+        private Dictionary<short, CGameRoom> roomDic;
 
         public CGameRoomManager()
         {
             rooms = new List<CGameRoom>();
+            roomDic = new Dictionary<short, CGameRoom>();
         }
 
+        #region 책에 있던 소스
         /// <summary>  
         /// 매칭을 요청한 유저들을 넘겨 받아 게임 방을 생성한다.  
         /// </summary>  
@@ -34,43 +36,6 @@ namespace SegyunGameServer
         }
 
         /// <summary>
-        /// 방 생성 요청을 처리한다.
-        /// </summary>
-        /// <param name="user"></param>
-        public void create_room(CGameUser user)
-        {
-            //byte create_room_number = 0;
-            byte maxClient = 100;
-
-            CGameRoom battleroom = new CGameRoom();
-            for (byte create_room_number = 0; create_room_number <= maxClient; ++create_room_number)
-            {
-                // 이미 있는 방 번호라면 넘긴다.
-                // 이거 containskey 쓴는거 맞냐?;;; 나중에 집가서 찾아보자
-                if (dicRoom.ContainsKey(create_room_number))
-                    continue;
-
-                // 방에 입장하고 생성된 방에 추가한다.
-                battleroom.enter_gameroom(user);
-                dicRoom.Add(create_room_number, battleroom);
-            }
-        }
-
-        /// <summary>
-        /// 생성된 방에 입장한다.
-        /// </summary>
-        /// <param name="user"></param>
-        /// <param name="room_number"></param>
-        public void enter_room(CGameUser user, byte room_number)
-        {
-            if (dicRoom.TryGetValue(room_number, out CGameRoom battleroom))
-            {
-                battleroom.enter_gameroom(user);
-            }
-        }
-
-
-        /// <summary>
         /// 방 제거
         /// </summary>
         /// <param name="room"></param>
@@ -79,34 +44,69 @@ namespace SegyunGameServer
             room.destroy();
             rooms.Remove(room);
         }
+        #endregion
+
+        /// <summary>
+        /// 방 생성 요청을 처리한다.
+        /// </summary>
+        /// <param name="user"></param>
+        public void CreateRoom(CGameUser user)
+        {
+            //byte create_room_number = 0;
+            short maxClient = 100;
+
+            // 방 생성
+            CGameRoom room = new CGameRoom();
+            for (short createRoomNumber = 0; createRoomNumber <= maxClient; ++createRoomNumber)
+            {
+                // 이미 있는 방 번호라면 넘긴다.
+                // 이거 containskey 쓰는거 맞냐?;;; 나중에 집가서 찾아보자
+                if (roomDic.ContainsKey(createRoomNumber))
+                    continue;
+
+                // 방에 입장하고 생성된 방에 추가한다.
+                room.EnterGameRoom(user, createRoomNumber);
+                roomDic.Add(createRoomNumber, room);
+            }
+        }
+
+        /// <summary>
+        /// 생성된 방에 입장한다.
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="room_number"></param>
+        public void EnterRoom(CGameUser user, short roomNumber)
+        {
+            if (roomDic.TryGetValue(roomNumber, out CGameRoom battleroom))
+            {
+                battleroom.EnterGameRoom(user, roomNumber);
+            }
+        }
 
         /// <summary>
         /// 매칭 대기중인 방
         /// </summary>
-        public void match_ready_room(CGameUser user)
+        public void GetMatchingRoom(CGameUser user)
         {
+            // 플레이어의 수가 2미만인 방의 리스트 조회
+            List<CGameRoom> roomlist = roomDic.Select(s => s.Value).Where(o => o.GetPlayerCount() < 2).ToList();
+
             // 대기중인 방에 대한 패킷을 여기서 보내주는게 맞겠지?
             CPacket msg = CPacket.create((short)PROTOCOL.GET_WAITING_ROOM);
 
-            // 플레이어의 수가 2미만인 방의 리스트 조회
-            List<CGameRoom> roomlist = dicRoom.Select(s => s.Value).Where(o => o.getplayercount() != 2).ToList();
             // 총 방의 수를 넣고
             msg.push(roomlist.Count);
+
             // 각 방의 데이터를 넣는다
             roomlist.ForEach(room =>
             {
-                // 방 번호라던가, 플레이어의 아이디라던가, 등등....
-                msg.push(room.room_number);
-                //msg.push(room.room_number);
+                // 방 번호라던가, 방 제목, 플레이어의 아이디 등등....
+                // 현재는 방번호만 있으므로
+                msg.push(room.roomNumber);
             });
-            //Dictionary<byte, CGameRoom> data = dicRoom.Where(s => s.Value.getplayercount() != 2);
 
-            foreach (CGameRoom room in dicRoom.Values)
-            {
-
-            }
-
-            //var data = dicRoom.Select(s => s.Value.getplayercount() != 2).ToDictionary();
+            // 됐다면 해당 유저에게 다시 보내주자
+            user.send(msg);
         }
     }
 }

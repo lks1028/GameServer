@@ -24,12 +24,13 @@ namespace SegyunGameServer
             READY_TO_TURN,
 
             // 턴 연출을 모두 완료한 상태.
-            CLIENT_TURN_FINISHED
+            CLIENT_TURN_FINISHED,
+
+            // 방에 입장하여 준비완료
+            PLAYER_READY,
         }
 
-        // 게임방 번호
-        public byte room_number;
-
+        #region 책에 있던 소스
         // 게임을 진행하는 플레이어. 1, 2P가 존재
         private List<CPlayer> players;
 
@@ -47,13 +48,23 @@ namespace SegyunGameServer
 
         private static byte COLUMN_COUNT = 7;
         private readonly short EMPTY_SLOT = short.MaxValue;
+        #endregion
+
+        // 게임을 진행하는 플레이어. 1, 2P가 존재
+        private List<CPlayer> playerList;
+
+        // 플레이어들의 상태를 관리하는 변수
+        private Dictionary<byte, PLAYER_STATE> playerStateDic;
+
+        // 게임방 번호
+        public short roomNumber;
 
         public CGameRoom()
         {
+            #region 책에 있떤 소스
             players = new List<CPlayer>();
             player_state = new Dictionary<byte, PLAYER_STATE>();
             current_turn_player = 0;
-            room_number = 0;
 
             // 7*7(총 49칸)모양의 보드판을 구성한다.
             // 초기에는 모두 빈공간이므로 EMPTY_SLOT으로 채운다.
@@ -65,8 +76,16 @@ namespace SegyunGameServer
                 gameboard.Add(EMPTY_SLOT);
                 table_board.Add(i);
             }
+            #endregion
+
+            playerList = new List<CPlayer>();
+            playerStateDic = new Dictionary<byte, PLAYER_STATE>();
+            roomNumber = 0;
+
+            //playerList.Capacity = 2;
         }
 
+        #region 책에 있던 소스
         /// <summary>  
         /// 매칭이 성사된 플레이어들이 게임에 입장한다.  
         /// </summary>  
@@ -100,58 +119,6 @@ namespace SegyunGameServer
 
             user1.enter_room(player1, this);
             user2.enter_room(player2, this);
-        }
-
-        /// <summary>  
-        /// 매칭이 성사된 플레이어들이 게임에 입장한다.
-        /// 방을 생성한 유저만 먼저 방에 들어가있는 경우도 있으므로.
-        /// </summary>  
-        /// <param name="player1"></param>  
-        /// <param name="player2"></param>  
-        public void enter_gameroom(CGameUser user)
-        {
-            // 방에 참가한 플레이어가 2명 이상이면 뭔가 이상한 것이므로 대처가 필요.
-            if (players.Count > 2)
-                players.Clear();
-
-            // 플레이어의 상태값도 2명 이상이면 뭔가 이상한 것이므로 대처가 필요함.
-            if (player_state.Count > 2)
-                player_state.Clear();
-
-            // 기존에 플레이어가 있는지 판단한 후 플레이어를 생성한다.
-            CPlayer player = (players.Count == 0) ? new CPlayer(user, 1) : new CPlayer(user, 2);
-            players.Add(player);
-
-            // 플레이어들의 초기 상태를 지정
-            change_playerstate(player, PLAYER_STATE.ENTERED_ROOM);
-
-            // 셋팅이 완료된 유저의 player객체와 room 객체 지정
-            user.enter_room(player, this);
-
-            // 플레이어가 꽉 찼다면
-            if (players.Count == 2)
-            {
-                // 각 플레이어에게 방을 구성하는 로딩을 시작하라고 전달
-                players.ForEach(obj =>
-                {
-                    CPacket msg = CPacket.create((short)PROTOCOL.START_LOADING);
-                    // 본인의 플레이어 인덱스를 알림
-                    msg.push(obj.player_index);
-                    obj.send(msg);
-                });
-            }
-            // 플레이어가 처음 방을 생성하고 들어왔다면
-            // 확실히 하기 위해 else if
-            else if (players.Count == 1)
-            {
-                players.ForEach(obj =>
-                {
-                    // 유저가 매칭될 때까지 대기
-                    CPacket msg = CPacket.create((short)PROTOCOL.ENTER_GAME_ROOM_WAITING_USER);
-                    msg.push(obj.player_index);
-                    obj.send(msg);
-                });
-            }
         }
 
         /// <summary>  
@@ -259,7 +226,12 @@ namespace SegyunGameServer
 		/// </summary>
 		void start_turn()
         {
+            // 턴을 진행할 수 있도록 준비 상태로 만든다.
+            this.players.ForEach(player => change_playerstate(player, PLAYER_STATE.READY_TO_TURN));
 
+            CPacket msg = CPacket.create((short)PROTOCOL.START_PLAYER_TURN);
+            msg.push(this.current_turn_player);
+            broadcast(msg);
         }
 
         /// <summary>  
@@ -537,10 +509,130 @@ namespace SegyunGameServer
 
             players.Clear();
         }
+        #endregion
 
-        public int getplayercount()
+        public int GetPlayerCount()
         {
             return players.Count();
+        }
+
+        /// <summary>  
+        /// 매칭이 성사된 플레이어들이 게임에 입장한다.
+        /// 방을 생성한 유저만 먼저 방에 들어가있는 경우도 있으므로.
+        /// </summary>  
+        /// <param name="player1"></param>  
+        /// <param name="player2"></param>  
+        public void EnterGameRoom(CGameUser user, short roomNumber)
+        {
+            // 방을 처음 생성하는거라면 방 번호를 셋팅
+            if (this.roomNumber == 0)
+                this.roomNumber = roomNumber;
+
+            // 방에 참가한 플레이어가 2명 이상이면 뭔가 이상한 것이므로 대처가 필요. 지금은 체크만
+            if (playerList.Count > 2)
+                playerList.Clear();
+
+            // 플레이어의 상태값도 2명 이상이면 뭔가 이상한 것이므로 대처가 필요함. 지금은 체크만
+            if (playerStateDic.Count > 2)
+                playerStateDic.Clear();
+
+            // 기존에 플레이어가 있는지 판단한 후 플레이어를 생성한다.
+            CPlayer player = (playerList.Count == 0) ? new CPlayer(user, 1) : new CPlayer(user, 2);
+            players.Add(player);
+
+            // 플레이어들의 초기 상태를 지정
+            ChangePlayerState(player, PLAYER_STATE.ENTERED_ROOM);
+
+            // 셋팅이 완료된 유저의 player객체와 room 객체 지정
+            user.enter_room(player, this);
+
+            // 플레이어가 꽉 찼다면
+            if (playerList.Count == 2)
+            {
+                // 각 플레이어에게 방의 인원이 모두 찼음을 알림
+                CPacket msg = CPacket.create((short)PROTOCOL.FULL_PLAYER_GAME_ROOM);
+
+                // 방에 입장한 플레이어들의 정보를 넘기고
+                playerList.ForEach(obj =>
+                {
+                    msg.push(obj.player_index);
+                });
+
+                // 모두에게 전송한다.
+                SendPacketToAllPlayer(msg);
+            }
+            // 플레이어가 처음 방을 생성하고 들어왔다면
+            // 확실히 하기 위해 else if
+            else if (playerList.Count == 1)
+            {
+                // 유저가 매칭될 때까지 대기하라고 알림
+                CPacket msg = CPacket.create((short)PROTOCOL.ENTER_GAME_ROOM_WAITING_USER);
+
+                // 현재는 별거 없지만 나중에는 생성한 유저의 정보들을 넣어 보내자 
+                playerList.ForEach(obj =>
+                {
+                    msg.push(obj.player_index);
+                    obj.send(msg);
+                });
+            }
+        }
+
+        /// <summary>
+        /// 플레이어의 상태값을 준비로 바꾸고 게임이 시작할 준비가 되었는지 체크
+        /// </summary>
+        /// <param name="player"></param>
+        public void PlayerReady(CPlayer player)
+        {
+            if (playerStateDic.TryGetValue(player.player_index, out PLAYER_STATE state))
+            {
+                if (state != PLAYER_STATE.PLAYER_READY)
+                    ChangePlayerState(player, PLAYER_STATE.PLAYER_READY);
+            }
+
+            // 준비가 되어있는 상태의 데이터를 리스트로
+            List<PLAYER_STATE> states = playerStateDic.Select(s => s.Value).Where(o => o == PLAYER_STATE.PLAYER_READY).ToList();
+            // 모두 준비가 되어있다면
+            if (states.Count == 2)
+            {
+                // 게임을 시작하라고 알림
+                CPacket msg = CPacket.create((short)PROTOCOL.START_LOADING);
+
+                playerList.ForEach(obj =>
+                {
+                    // 본인의 플레이어 인덱스를 알림
+                    msg.push(player.player_index);
+                    obj.send(msg);
+                });
+            }
+        }
+
+        /// <summary>
+        /// 방에 존재하는 모든 플레이어에게 명령을 전송한다.
+        /// </summary>
+        /// <param name="msg"></param>
+        private void SendPacketToAllPlayer(CPacket msg)
+        {
+            playerList.ForEach(player =>
+            {
+                player.send(msg);
+            });
+        }
+
+        /// <summary>  
+        /// 플레이어의 상태를 변경한다.  
+        /// </summary>  
+        /// <param name="player"></param>  
+        /// <param name="state"></param>  
+        private void ChangePlayerState(CPlayer player, PLAYER_STATE state)
+        {
+            if (playerStateDic.ContainsKey(player.player_index))
+            {
+                playerStateDic[player.player_index] = state;
+            }
+            else
+            {
+                playerStateDic.Add(player.player_index, state);
+            }
         }
     }
 }
