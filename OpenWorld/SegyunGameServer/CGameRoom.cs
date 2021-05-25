@@ -27,6 +27,9 @@ namespace SegyunGameServer
             CLIENT_TURN_FINISHED
         }
 
+        // 게임방 번호
+        private byte room_number;
+
         // 게임을 진행하는 플레이어. 1, 2P가 존재
         private List<CPlayer> players;
 
@@ -50,6 +53,7 @@ namespace SegyunGameServer
             players = new List<CPlayer>();
             player_state = new Dictionary<byte, PLAYER_STATE>();
             current_turn_player = 0;
+            room_number = 0;
 
             // 7*7(총 49칸)모양의 보드판을 구성한다.
             // 초기에는 모두 빈공간이므로 EMPTY_SLOT으로 채운다.
@@ -96,6 +100,58 @@ namespace SegyunGameServer
 
             user1.enter_room(player1, this);
             user2.enter_room(player2, this);
+        }
+
+        /// <summary>  
+        /// 매칭이 성사된 플레이어들이 게임에 입장한다.
+        /// 방을 생성한 유저만 먼저 방에 들어가있는 경우도 있으므로.
+        /// </summary>  
+        /// <param name="player1"></param>  
+        /// <param name="player2"></param>  
+        public void enter_gameroom(CGameUser user)
+        {
+            // 방에 참가한 플레이어가 2명 이상이면 뭔가 이상한 것이므로 대처가 필요.
+            if (players.Count > 2)
+                players.Clear();
+
+            // 플레이어의 상태값도 2명 이상이면 뭔가 이상한 것이므로 대처가 필요함.
+            if (player_state.Count > 2)
+                player_state.Clear();
+
+            // 기존에 플레이어가 있는지 판단한 후 플레이어를 생성한다.
+            CPlayer player = (players.Count == 0) ? new CPlayer(user, 1) : new CPlayer(user, 2);
+            players.Add(player);
+
+            // 플레이어들의 초기 상태를 지정
+            change_playerstate(player, PLAYER_STATE.ENTERED_ROOM);
+
+            // 셋팅이 완료된 유저의 player객체와 room 객체 지정
+            user.enter_room(player, this);
+
+            // 플레이어가 꽉 찼다면
+            if (players.Count == 2)
+            {
+                // 각 플레이어에게 방을 구성하는 로딩을 시작하라고 전달
+                players.ForEach(obj =>
+                {
+                    CPacket msg = CPacket.create((short)PROTOCOL.START_LOADING);
+                    // 본인의 플레이어 인덱스를 알림
+                    msg.push(obj.player_index);
+                    obj.send(msg);
+                });
+            }
+            // 플레이어가 처음 방을 생성하고 들어왔다면
+            // 확실히 하기 위해 else if
+            else if (players.Count == 1)
+            {
+                players.ForEach(obj =>
+                {
+                    // 유저가 매칭될 때까지 대기
+                    CPacket msg = CPacket.create((short)PROTOCOL.ENTER_GAME_ROOM_WAITING_USER);
+                    msg.push(obj.player_index);
+                    obj.send(msg);
+                });
+            }
         }
 
         /// <summary>  
@@ -480,6 +536,11 @@ namespace SegyunGameServer
             broadcast(msg);
 
             players.Clear();
+        }
+
+        public int getplayercount()
+        {
+            return players.Count();
         }
     }
 }

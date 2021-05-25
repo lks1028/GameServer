@@ -39,6 +39,15 @@ namespace SegyunGameServer
 		// 게임 종료.
 		GAME_OVER = 10,
 
+		// 방 입장 후 매칭 대기
+		ENTER_GAME_ROOM_WAITING_USER = 11,
+
+		// 게임방 생성
+		CREATE_ROOM = 12,
+
+		// 게임방 생성
+		GET_WAITING_ROOM = 13,
+
 		END
 	}
 }
