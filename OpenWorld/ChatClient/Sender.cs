@@ -55,6 +55,7 @@ namespace ChatClient
             lock (lockObj)
             {
                 SocketAsyncEventArgs sendEventArgs = new SocketAsyncEventArgs();
+                sendEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(ReceiveMsg);
                 sendEventArgs.SetBuffer(buffer, 0, buffer.Length);
                 isComplete = socket.SendAsync(sendEventArgs);
                 if (!isComplete)
@@ -64,6 +65,34 @@ namespace ChatClient
 
                 Thread.Sleep(50);
             }
+        }
+
+        private void ReceiveMsg(object sender, SocketAsyncEventArgs args)
+        {
+            lock (lockObj)
+            {
+                byte[] buffer = new byte[4096];
+
+                SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
+                receiveArgs.Completed += new EventHandler<SocketAsyncEventArgs>(ReceiveComplete);
+                receiveArgs.SetBuffer(buffer, 0, buffer.Length);
+
+                socket.ReceiveAsync(receiveArgs);
+            }
+        }
+
+        private void ReceiveComplete(object sender, SocketAsyncEventArgs args)
+        {
+            if (args.SocketError == SocketError.Success && args.BytesTransferred > 0)
+            {
+                byte[] buffer = new byte[4096];
+                Array.Copy(args.Buffer, 0, buffer, 0, args.BytesTransferred);
+                string result = Encoding.UTF8.GetString(buffer);
+                Console.WriteLine(result);
+
+                //ReceiveMsg(null, args);
+            }
+
         }
     }
 }
