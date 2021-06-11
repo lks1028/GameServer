@@ -14,6 +14,11 @@ namespace ChatClient
         private SocketAsyncEventArgs socketArgs;
         private Socket socket;
 
+        private UserToken token;
+
+        public delegate void ReceiveMessageCallBack(string msg);
+        public ReceiveMessageCallBack receiveMessageCallback;
+
         private object lockObj = new object();
 
         public void Start(string host, int port, int backlog)
@@ -45,54 +50,73 @@ namespace ChatClient
             if (args.SocketError != SocketError.Success)
                 return;
 
-            string test = "SocketAsyncEventArgs Test";
-            byte[] buffer = Encoding.UTF8.GetBytes(test);
+            token = new UserToken();
+            token.socket = sender as Socket;
+            token.receiveMessageCallback += DisplayText;
+            token.ReceiveStart();
 
-            Console.WriteLine("buffer Length : " + buffer.Length);
+            //string test = "SocketAsyncEventArgs Test";
+            //byte[] buffer = Encoding.UTF8.GetBytes(test);
 
-            bool isComplete = false;
+            //Console.WriteLine("buffer Length : " + buffer.Length);
 
-            lock (lockObj)
-            {
-                SocketAsyncEventArgs sendEventArgs = new SocketAsyncEventArgs();
-                sendEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(ReceiveMsg);
-                sendEventArgs.SetBuffer(buffer, 0, buffer.Length);
-                isComplete = socket.SendAsync(sendEventArgs);
-                if (!isComplete)
-                {
-                    Console.WriteLine(isComplete);
-                }
+            //bool isComplete = false;
 
-                Thread.Sleep(50);
-            }
+            //lock (lockObj)
+            //{
+            //    //SocketAsyncEventArgs sendEventArgs = new SocketAsyncEventArgs();
+            //    //sendEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(ReceiveMsg);
+            //    //sendEventArgs.SetBuffer(buffer, 0, buffer.Length);
+
+            //    token = new UserToken();
+            //    token.socket = sender as Socket;
+
+            //    isComplete = socket.SendAsync(sendEventArgs);
+            //    if (!isComplete)
+            //    {
+            //        Console.WriteLine(isComplete);
+            //    }
+
+            //    Thread.Sleep(50);
+            //}
         }
 
-        private void ReceiveMsg(object sender, SocketAsyncEventArgs args)
+        private void DisplayText(string msg)
         {
-            lock (lockObj)
-            {
-                byte[] buffer = new byte[4096];
-
-                SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
-                receiveArgs.Completed += new EventHandler<SocketAsyncEventArgs>(ReceiveComplete);
-                receiveArgs.SetBuffer(buffer, 0, buffer.Length);
-
-                socket.ReceiveAsync(receiveArgs);
-            }
+            receiveMessageCallback(msg);
         }
 
-        private void ReceiveComplete(object sender, SocketAsyncEventArgs args)
+        public void SendMsg(string msg)
         {
-            if (args.SocketError == SocketError.Success && args.BytesTransferred > 0)
-            {
-                byte[] buffer = new byte[4096];
-                Array.Copy(args.Buffer, 0, buffer, 0, args.BytesTransferred);
-                string result = Encoding.UTF8.GetString(buffer);
-                Console.WriteLine(result);
-
-                //ReceiveMsg(null, args);
-            }
-
+            token.SendMsg(msg);
         }
+
+        //private void ReceiveMsg(object sender, SocketAsyncEventArgs args)
+        //{
+        //    lock (lockObj)
+        //    {
+        //        byte[] buffer = new byte[4096];
+
+        //        SocketAsyncEventArgs receiveArgs = new SocketAsyncEventArgs();
+        //        receiveArgs.Completed += new EventHandler<SocketAsyncEventArgs>(ReceiveComplete);
+        //        receiveArgs.SetBuffer(buffer, 0, buffer.Length);
+
+        //        socket.ReceiveAsync(receiveArgs);
+        //    }
+        //}
+
+        //private void ReceiveComplete(object sender, SocketAsyncEventArgs args)
+        //{
+        //    if (args.SocketError == SocketError.Success && args.BytesTransferred > 0)
+        //    {
+        //        byte[] buffer = new byte[4096];
+        //        Array.Copy(args.Buffer, 0, buffer, 0, args.BytesTransferred);
+        //        string result = Encoding.UTF8.GetString(buffer);
+        //        Console.WriteLine(result);
+
+        //        //ReceiveMsg(null, args);
+        //    }
+
+        //}
     }
 }

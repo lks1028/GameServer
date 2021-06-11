@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ChatServer
+namespace ChatClient
 {
     class UserToken
     {
@@ -15,9 +15,6 @@ namespace ChatServer
         private SocketAsyncEventArgs receiveArgs;
         // 송신할 이벤트 객체
         private SocketAsyncEventArgs sendArgs;
-
-        // 유저 컨트롤 매니저
-        private UserManager userManager;
 
         // 메세지를 받으면 화면에 표시해주기 위한 콜백
         public delegate void ReceiveMessageCallBack(string msg);
@@ -58,7 +55,6 @@ namespace ChatServer
                 byte[] buffer = new byte[4096];
                 Array.Copy(args.Buffer, 0, buffer, 0, args.BytesTransferred);
                 string msg = Encoding.UTF8.GetString(buffer);
-                userManager.SendMsgAll(msg, this);
 
                 receiveMessageCallback(msg);
 
@@ -76,11 +72,6 @@ namespace ChatServer
             sendArgs.AcceptSocket = null;
             sendArgs.SetBuffer(buffer, 0, buffer.Length);
             socket.SendAsync(sendArgs);
-        }
-
-        public void SetUserManager(UserManager manager)
-        {
-            userManager = manager;
         }
     }
 }
