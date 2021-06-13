@@ -68,10 +68,20 @@ namespace ChatClient
 
         public void SendMsg(string msg)
         {
-            byte[] buffer = Encoding.UTF8.GetBytes(msg);
+            byte[] lengthBuffer = BitConverter.GetBytes(msg.Length);
+            byte[] msgBuffer = Encoding.UTF8.GetBytes(msg);
+            byte[] buffer = new byte[lengthBuffer.Length + msgBuffer.Length];
+            Array.Copy(lengthBuffer, 0, buffer, 0, lengthBuffer.Length);
+            Array.Copy(msgBuffer, 0, buffer, lengthBuffer.Length, msgBuffer.Length);
+
             sendArgs.AcceptSocket = null;
             sendArgs.SetBuffer(buffer, 0, buffer.Length);
             socket.SendAsync(sendArgs);
+
+            //byte[] buffer = Encoding.UTF8.GetBytes(msg);
+            //sendArgs.AcceptSocket = null;
+            //sendArgs.SetBuffer(buffer, 0, buffer.Length);
+            //socket.SendAsync(sendArgs);
         }
     }
 }

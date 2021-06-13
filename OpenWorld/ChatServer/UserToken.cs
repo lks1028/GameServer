@@ -7,6 +7,13 @@ using System.Threading.Tasks;
 
 namespace ChatServer
 {
+    class Defines
+    {
+        public static readonly short HEADERSIZE = 4;
+        public static readonly short COMMAND = 4;
+    }
+
+
     class UserToken
     {
         // Connet된 소켓 객체
@@ -18,6 +25,21 @@ namespace ChatServer
 
         // 유저 컨트롤 매니저
         private UserManager userManager;
+        // 패킷
+        PacketMaker maker = new PacketMaker();
+
+
+        // 읽을 전체 바이트 수
+        private int totalByteLength = 0;
+        // 현재 읽은 바이트 수
+        private int currentByteLength = 0;
+        // 남은 바이트 수
+        private int remainByteLength = 0;
+        // 저장할 버퍼
+        private byte[] receiveBuffers = new byte[4096];
+
+        
+
 
         // 메세지를 받으면 화면에 표시해주기 위한 콜백
         public delegate void ReceiveMessageCallBack(string msg);
@@ -54,13 +76,15 @@ namespace ChatServer
                 Socket socket = sender as Socket;
                 receiveArgs.AcceptSocket = null;
 
-                // 받은 데이터를 다른 클라들에게 보내자
-                byte[] buffer = new byte[4096];
-                Array.Copy(args.Buffer, 0, buffer, 0, args.BytesTransferred);
-                string msg = Encoding.UTF8.GetString(buffer);
-                userManager.SendMsgAll(msg, this);
+                MessageParser(args.Buffer, args.BytesTransferred);
 
-                receiveMessageCallback(msg);
+                //// 받은 데이터를 다른 클라들에게 보내자
+                //byte[] buffer = new byte[4096];
+                //Array.Copy(args.Buffer, 0, buffer, 0, args.BytesTransferred);
+                //string msg = Encoding.UTF8.GetString(buffer);
+                //userManager.SendMsgAll(msg, this);
+
+                //receiveMessageCallback(msg);
 
                 isComplete = socket.ReceiveAsync(receiveArgs);
                 if (!isComplete)
@@ -70,9 +94,77 @@ namespace ChatServer
             }
         }
 
+        // 수신한 byte를 string으로 변환
+        private void MessageParser(byte[] buffer, int bytesTransferred)
+        {
+            // 만약 현재 위치가 헤더 사이즈보다 적다면 헤더를 먼저 읽어오자
+            if (currentByteLength < Defines.HEADERSIZE)
+            {
+                // 헤더 복사
+                Array.Copy(buffer, currentByteLength, receiveBuffers, currentByteLength, receiveBuffers.Length);
+                currentByteLength += Defines.HEADERSIZE;
+
+                // 메세지의 크기를 구하자
+                totalByteLength = BitConverter.ToInt32(receiveBuffers, 0);
+
+                // 남은 데이터의 값은
+                remainByteLength = totalByteLength;
+
+                // 0보다 크면 남아있는 데이터가 있음
+                if ((bytesTransferred - Defines.HEADERSIZE) > 0)
+                {
+                    // 데이터를 복사
+                    Array.Copy(buffer, currentByteLength, receiveBuffers, currentByteLength, (bytesTransferred - Defines.HEADERSIZE));
+
+                    // 헤더값만큼 뺀걸 더해준다
+                    currentByteLength += (bytesTransferred - Defines.HEADERSIZE);
+                    remainByteLength = totalByteLength - currentByteLength + Defines.HEADERSIZE;
+                }
+            }
+            else
+            {
+                // 남은 데이터의 값이 0이 아니면 받아올 데이터가 남아있음
+                if (remainByteLength != 0)
+                {
+                    // 데이터를 복사
+                    Array.Copy(buffer, currentByteLength, receiveBuffers, currentByteLength, bytesTransferred);
+                    currentByteLength += bytesTransferred;
+                    remainByteLength = totalByteLength - currentByteLength + Defines.HEADERSIZE;
+                }
+            }
+            
+            // 데이터를 전부 복사해 남은 값이 없다면
+            if (remainByteLength == 0)
+            {
+                //byte[] buffer = new byte[4096];
+                //Array.Copy(args.Buffer, 0, buffer, 0, args.BytesTransferred);
+
+                // 메세지로 변환하여 보낸다
+                string msg = Encoding.UTF8.GetString(receiveBuffers, Defines.HEADERSIZE, totalByteLength);
+                userManager.SendMsgAll(msg, this);
+
+                totalByteLength = 0;
+                currentByteLength = 0;
+                remainByteLength = 0;
+
+                Array.Clear(receiveBuffers, 0, receiveBuffers.Length);
+
+                receiveMessageCallback(msg);
+            }
+
+            // 
+        }
+
         public void SendMsg(string msg)
         {
-            byte[] buffer = Encoding.UTF8.GetBytes(msg);
+            //byte[] buffer = Encoding.UTF8.GetBytes(msg);
+
+            byte[] lengthBuffer = maker.GetIntToByte(msg.Length);
+            byte[] msgBuffer = maker.GetStringToByte(msg);
+            byte[] buffer = new byte[lengthBuffer.Length + msgBuffer.Length];
+            Array.Copy(buffer, 0, lengthBuffer, 0, lengthBuffer.Length);
+            Array.Copy(buffer, lengthBuffer.Length, msgBuffer, 0, msgBuffer.Length);
+
             sendArgs.AcceptSocket = null;
             sendArgs.SetBuffer(buffer, 0, buffer.Length);
             socket.SendAsync(sendArgs);
