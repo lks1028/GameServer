@@ -19,6 +19,12 @@ namespace ChatClient
         public delegate void ReceiveMessageCallBack(string msg);
         public ReceiveMessageCallBack receiveMessageCallback;
 
+        public delegate void ConnectDoneCallBack();
+        public ConnectDoneCallBack connectDoneCallBack;
+
+        public delegate void SettingIDDoneCallBack();
+        public SettingIDDoneCallBack settingIDDoneCallBack;
+
         private object lockObj = new object();
 
         public void Start(string host, int port, int backlog)
@@ -48,7 +54,10 @@ namespace ChatClient
             token = new UserToken();
             token.socket = sender as Socket;
             token.receiveMessageCallback += DisplayText;
+            token.settingIDCallback += SettingIDCallBack;
             token.ReceiveStart();
+
+            connectDoneCallBack();
         }
 
         private void DisplayText(string msg)
@@ -59,6 +68,11 @@ namespace ChatClient
         public void SendPacket(COMMAND command, PacketMaker packet)
         {
             token.SendPacket(command, packet);
+        }
+
+        private void SettingIDCallBack()
+        {
+            settingIDDoneCallBack();
         }
     }
 }

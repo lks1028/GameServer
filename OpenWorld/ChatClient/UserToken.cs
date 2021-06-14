@@ -55,7 +55,7 @@ namespace ChatClient
         public ReceiveMessageCallBack receiveMessageCallback;
 
         // 아이디 설정이 됐으면 보내주는 콜백
-        public delegate void SettingIDCallBack(string msg);
+        public delegate void SettingIDCallBack();
         public SettingIDCallBack settingIDCallback;
 
         public UserToken()
@@ -213,10 +213,15 @@ namespace ChatClient
                         {
                             MessageBox.Show(msg);
                             userID = msg;
+                            settingIDCallback();
                         }
                         else
                         {
-                            MessageBox.Show(msg);
+                            MessageBox.Show("동일한 아이디가 존재합니다");
+                            //socket.Disconnect(false);
+                            SocketAsyncEventArgs dis = new SocketAsyncEventArgs();
+                            dis.Completed += new EventHandler<SocketAsyncEventArgs>(Dis);
+                            socket.DisconnectAsync(dis);
                         }
 
                         break;
@@ -231,6 +236,11 @@ namespace ChatClient
                         break;
                     }
             }
+        }
+
+        private void Dis(object sender, SocketAsyncEventArgs args)
+        {
+            MessageBox.Show("서버 접속 종료됨");
         }
     }
 }

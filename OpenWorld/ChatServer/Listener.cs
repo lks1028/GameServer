@@ -77,7 +77,7 @@ namespace ChatServer
             UserToken token = new UserToken();
             token.socket = args.AcceptSocket;
             token.ReceiveStart();
-            token.SendMsg("Server Connet");
+            //token.SendMsg("Server Connet");
             token.SetUserManager(userManager);
             token.receiveMessageCallback += DisplayText;
 

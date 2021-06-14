@@ -100,6 +100,11 @@ namespace ChatServer
                     ReceivecComplete(socket, receiveArgs);
                 }
             }
+
+            if (args.LastOperation == SocketAsyncOperation.Disconnect)
+            {
+                System.Windows.Forms.MessageBox.Show("Client Disconnect");
+            }
         }
 
         // 수신한 byte를 string으로 변환

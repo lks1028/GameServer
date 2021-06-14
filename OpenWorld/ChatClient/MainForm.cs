@@ -23,7 +23,9 @@ namespace ChatClient
         {
             sender1 = new Sender();
             sender1.receiveMessageCallback += DisplayText;
-            sender1.Start("127.0.0.1", 8888, 10);
+            sender1.connectDoneCallBack += ConnectDone;
+            sender1.settingIDDoneCallBack += SettingIDDone;
+            //sender1.Start("127.0.0.1", 8888, 10);
         }
 
         private void DisplayText(string msg)
@@ -61,12 +63,37 @@ namespace ChatClient
 
         private void button1_Click(object sender, EventArgs e)
         {
+            sender1.Start("127.0.0.1", 8888, 10);
+        }
+
+        private void ConnectDone()
+        {
             PacketMaker maker = new PacketMaker();
             maker.SetMsgLength(Encoding.UTF8.GetByteCount(textBox1.Text));
             maker.SetCommand((int)COMMAND.SET_USER_ID);
             maker.SetStringData(textBox1.Text);
 
             sender1.SendPacket(COMMAND.SET_USER_ID, maker);
+        }
+
+        private void SettingIDDone()
+        {
+            Invoke(new Action(
+                        delegate ()
+                        {
+                            label1.Visible = false;
+                            textBox1.Visible = false;
+                            button1.Visible = false;
+
+                            ReceiveTextBox.Enabled = true;
+                            ReceiveTextBox.Visible = true;
+
+                            SendTextBox.Enabled = true;
+                            SendTextBox.Visible = true;
+
+                            SendButton.Enabled = true;
+                            SendButton.Visible = true;
+                        }));
         }
     }
 }
