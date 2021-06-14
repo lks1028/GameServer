@@ -49,9 +49,24 @@ namespace ChatClient
 
             ReceiveTextBox.Text = builder.ToString();
 
-            sender1.SendMsg(SendTextBox.Text);
+            PacketMaker maker = new PacketMaker();
+            maker.SetMsgLength(Encoding.UTF8.GetByteCount(SendTextBox.Text));
+            maker.SetCommand((int)COMMAND.SEND_CHAT_MSG);
+            maker.SetStringData(SendTextBox.Text);
+
+            sender1.SendPacket(COMMAND.SEND_CHAT_MSG, maker);
 
             SendTextBox.Text = string.Empty;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            PacketMaker maker = new PacketMaker();
+            maker.SetMsgLength(Encoding.UTF8.GetByteCount(textBox1.Text));
+            maker.SetCommand((int)COMMAND.SET_USER_ID);
+            maker.SetStringData(textBox1.Text);
+
+            sender1.SendPacket(COMMAND.SET_USER_ID, maker);
         }
     }
 }

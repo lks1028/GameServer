@@ -13,6 +13,21 @@ namespace ChatServer
         public static readonly short COMMAND = 4;
     }
 
+    public enum COMMAND : int
+    {
+        SERVER_CONNECTED = 1,
+
+        SET_USER_ID,
+        SET_USER_ID_DONE,
+
+        CREATE_ROOM,
+        CREATE_ROOM_DONE,
+
+        SEND_CHAT_MSG,
+        RECEIVE_CHAT_MSG,
+
+        SERVER_DISCONNECTED
+    }
 
     class UserToken
     {
@@ -26,8 +41,9 @@ namespace ChatServer
         // 유저 컨트롤 매니저
         private UserManager userManager;
         // 패킷
-        PacketMaker maker = new PacketMaker();
+        //PacketMaker maker = new PacketMaker();
 
+        public string userID = string.Empty;
 
         // 읽을 전체 바이트 수
         private int totalByteLength = 0;
@@ -78,14 +94,6 @@ namespace ChatServer
 
                 MessageParser(args.Buffer, args.BytesTransferred);
 
-                //// 받은 데이터를 다른 클라들에게 보내자
-                //byte[] buffer = new byte[4096];
-                //Array.Copy(args.Buffer, 0, buffer, 0, args.BytesTransferred);
-                //string msg = Encoding.UTF8.GetString(buffer);
-                //userManager.SendMsgAll(msg, this);
-
-                //receiveMessageCallback(msg);
-
                 isComplete = socket.ReceiveAsync(receiveArgs);
                 if (!isComplete)
                 {
@@ -97,28 +105,32 @@ namespace ChatServer
         // 수신한 byte를 string으로 변환
         private void MessageParser(byte[] buffer, int bytesTransferred)
         {
-            // 만약 현재 위치가 헤더 사이즈보다 적다면 헤더를 먼저 읽어오자
-            if (currentByteLength < Defines.HEADERSIZE)
+            // 만약 현재 위치가 헤더 + 커맨드 사이즈보다 적다면 헤더와 커맨드를 먼저 읽어오자
+            if (currentByteLength < Defines.HEADERSIZE + Defines.COMMAND)
             {
                 // 헤더 복사
-                Array.Copy(buffer, currentByteLength, receiveBuffers, currentByteLength, receiveBuffers.Length);
+                Array.Copy(buffer, currentByteLength, receiveBuffers, currentByteLength, Defines.HEADERSIZE);
                 currentByteLength += Defines.HEADERSIZE;
 
                 // 메세지의 크기를 구하자
                 totalByteLength = BitConverter.ToInt32(receiveBuffers, 0);
 
+                // 커맨드 복사
+                Array.Copy(buffer, currentByteLength, receiveBuffers, currentByteLength, Defines.COMMAND);
+                currentByteLength += Defines.COMMAND;
+
                 // 남은 데이터의 값은
                 remainByteLength = totalByteLength;
 
                 // 0보다 크면 남아있는 데이터가 있음
-                if ((bytesTransferred - Defines.HEADERSIZE) > 0)
+                if ((bytesTransferred - (Defines.HEADERSIZE + Defines.COMMAND)) > 0)
                 {
                     // 데이터를 복사
-                    Array.Copy(buffer, currentByteLength, receiveBuffers, currentByteLength, (bytesTransferred - Defines.HEADERSIZE));
+                    Array.Copy(buffer, currentByteLength, receiveBuffers, currentByteLength, (bytesTransferred - (Defines.HEADERSIZE + Defines.COMMAND)));
 
                     // 헤더값만큼 뺀걸 더해준다
-                    currentByteLength += (bytesTransferred - Defines.HEADERSIZE);
-                    remainByteLength = totalByteLength - currentByteLength + Defines.HEADERSIZE;
+                    currentByteLength += (bytesTransferred - (Defines.HEADERSIZE + Defines.COMMAND));
+                    remainByteLength = totalByteLength - currentByteLength + (Defines.HEADERSIZE + Defines.COMMAND);
                 }
             }
             else
@@ -129,7 +141,7 @@ namespace ChatServer
                     // 데이터를 복사
                     Array.Copy(buffer, currentByteLength, receiveBuffers, currentByteLength, bytesTransferred);
                     currentByteLength += bytesTransferred;
-                    remainByteLength = totalByteLength - currentByteLength + Defines.HEADERSIZE;
+                    remainByteLength = totalByteLength - currentByteLength + (Defines.HEADERSIZE + Defines.COMMAND);
                 }
             }
             
@@ -140,8 +152,11 @@ namespace ChatServer
                 //Array.Copy(args.Buffer, 0, buffer, 0, args.BytesTransferred);
 
                 // 메세지로 변환하여 보낸다
-                string msg = Encoding.UTF8.GetString(receiveBuffers, Defines.HEADERSIZE, totalByteLength);
-                userManager.SendMsgAll(msg, this);
+                int command = BitConverter.ToInt32(receiveBuffers, Defines.HEADERSIZE);
+                //string msg = Encoding.UTF8.GetString(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND), totalByteLength);
+                //userManager.SendMsgAll(msg, this);
+
+                ReceivePacket((COMMAND)command);
 
                 totalByteLength = 0;
                 currentByteLength = 0;
@@ -149,7 +164,7 @@ namespace ChatServer
 
                 Array.Clear(receiveBuffers, 0, receiveBuffers.Length);
 
-                receiveMessageCallback(msg);
+                //receiveMessageCallback(msg);
             }
 
             // 
@@ -159,20 +174,80 @@ namespace ChatServer
         {
             //byte[] buffer = Encoding.UTF8.GetBytes(msg);
 
-            byte[] lengthBuffer = maker.GetIntToByte(msg.Length);
-            byte[] msgBuffer = maker.GetStringToByte(msg);
-            byte[] buffer = new byte[lengthBuffer.Length + msgBuffer.Length];
-            Array.Copy(buffer, 0, lengthBuffer, 0, lengthBuffer.Length);
-            Array.Copy(buffer, lengthBuffer.Length, msgBuffer, 0, msgBuffer.Length);
+            PacketMaker maker = new PacketMaker();
+            maker.SetMsgLength(Encoding.UTF8.GetByteCount(msg));
+            maker.SetCommand((int)COMMAND.RECEIVE_CHAT_MSG);
+            maker.SetStringData(msg);
 
-            sendArgs.AcceptSocket = null;
-            sendArgs.SetBuffer(buffer, 0, buffer.Length);
-            socket.SendAsync(sendArgs);
+            SendPacket(COMMAND.RECEIVE_CHAT_MSG, maker);
         }
 
         public void SetUserManager(UserManager manager)
         {
             userManager = manager;
+        }
+
+        // 패킷 전송
+        public void SendPacket(COMMAND command, PacketMaker packet)
+        {
+            switch (command)
+            {
+                case COMMAND.SET_USER_ID_DONE:
+                    sendArgs.AcceptSocket = null;
+                    sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
+                    socket.SendAsync(sendArgs);
+
+                    break;
+
+                case COMMAND.RECEIVE_CHAT_MSG:
+                    sendArgs.AcceptSocket = null;
+                    sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
+                    socket.SendAsync(sendArgs);
+
+                    break;
+            }
+        }
+
+        // 패킷 수신
+        public void ReceivePacket(COMMAND command)
+        {
+            switch (command)
+            {
+                case COMMAND.SET_USER_ID:
+                    {
+                        string msg = Encoding.UTF8.GetString(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND), totalByteLength);
+                        PacketMaker maker = new PacketMaker();
+                        if (!userManager.FindUserID(msg))
+                        {
+                            maker.SetMsgLength(Encoding.UTF8.GetByteCount(msg) + 4);
+                            maker.SetCommand((int)COMMAND.SET_USER_ID_DONE);
+                            maker.SetIntData(1);
+                            maker.SetStringData(msg);
+                            userID = msg;
+                        }
+                        else
+                        {
+                            maker.SetMsgLength(Encoding.UTF8.GetByteCount("ID Already Exist") + 4);
+                            maker.SetCommand((int)COMMAND.SET_USER_ID_DONE);
+                            maker.SetIntData(0);
+                            maker.SetStringData("ID Already Exist");
+                        }
+
+                        SendPacket(COMMAND.SET_USER_ID_DONE, maker);
+
+                        break;
+                    }
+
+                case COMMAND.SEND_CHAT_MSG:
+                    {
+                        string msg = Encoding.UTF8.GetString(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND), totalByteLength);
+                        userManager.SendMsgAll(msg, this);
+
+                        receiveMessageCallback(msg);
+
+                        break;
+                    }
+            }
         }
     }
 }

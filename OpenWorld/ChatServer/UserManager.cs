@@ -36,5 +36,11 @@ namespace ChatServer
                 user.SendMsg(msg);
             }
         }
+
+        public bool FindUserID(string ID)
+        {
+            // ID를 가지고 있는 token이 없으면 false, 있으면 true
+            return tokenList.Find(s => s.userID.Equals(ID)) != null;
+        }
     }
 }

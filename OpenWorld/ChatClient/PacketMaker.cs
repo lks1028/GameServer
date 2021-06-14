@@ -4,14 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ChatServer
+namespace ChatClient
 {
-    class PacketMaker
+    public class PacketMaker
     {
         private int msgLength;
         private int command;
 
-        public int currentPos;
+        public int currentPos = 0;
         public byte[] dataBuffer = new byte[4096];
 
         public void SetMsgLength(int length)
@@ -49,11 +49,6 @@ namespace ChatServer
             return BitConverter.GetBytes(length);
         }
 
-        //public byte[] GetCommandToByte(short command)
-        //{
-        //    return BitConverter.GetBytes(command);
-        //}
-
         public byte[] GetStringToByte(string msg)
         {
             return Encoding.UTF8.GetBytes(msg);
@@ -64,11 +59,6 @@ namespace ChatServer
         {
             return BitConverter.ToInt32(data, 0);
         }
-
-        //public byte[] GetCommandToByte(short command)
-        //{
-        //    return BitConverter.GetBytes(command);
-        //}
 
         public string GetByteToString(byte[] data)
         {
