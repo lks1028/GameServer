@@ -10,6 +10,10 @@ namespace ChatServer
     {
         private List<UserToken> tokenList;
 
+        // 서버 로그 콜백
+        public delegate void ServerLogCallBack(string msg);
+        public ServerLogCallBack serverLogCallback;
+
         public UserManager()
         {
             tokenList = new List<UserToken>();
@@ -18,6 +22,15 @@ namespace ChatServer
         public void AddUserToken(UserToken token)
         {
             tokenList.Add(token);
+        }
+
+        public void RemoveUserToken(UserToken token)
+        {
+            if (tokenList.Remove(token))
+            {
+                serverLogCallback("Client Disconnect");
+                serverLogCallback($"Total Client Count : {GetTokenListCount()}");
+            }
         }
 
         public int GetTokenListCount()

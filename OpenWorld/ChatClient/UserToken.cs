@@ -17,6 +17,7 @@ namespace ChatClient
     public enum COMMAND : int
     {
         SERVER_CONNECTED = 1,
+        SERVER_DISCONNECTED,
 
         SET_USER_ID,
         SET_USER_ID_DONE,
@@ -25,9 +26,7 @@ namespace ChatClient
         CREATE_ROOM_DONE,
 
         SEND_CHAT_MSG,
-        RECEIVE_CHAT_MSG,
-
-        SERVER_DISCONNECTED
+        RECEIVE_CHAT_MSG
     }
 
     class UserToken
@@ -196,6 +195,13 @@ namespace ChatClient
                     socket.SendAsync(sendArgs);
 
                     break;
+
+                case COMMAND.SERVER_DISCONNECTED:
+                    sendArgs.AcceptSocket = null;
+                    sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
+                    socket.SendAsync(sendArgs);
+
+                    break;
             }
         }
 
@@ -218,10 +224,20 @@ namespace ChatClient
                         else
                         {
                             MessageBox.Show("동일한 아이디가 존재합니다");
+
+                            // 디스커넥트를 서버에 보내자
+                            // 나중에 패킷 메세지도 필요하면 그 때 보내보자
+                            PacketMaker maker = new PacketMaker();
+                            maker.SetMsgLength(BitConverter.GetBytes(1).Length);
+                            maker.SetCommand((int)COMMAND.SERVER_DISCONNECTED);
+                            maker.SetIntData(1);
+
+                            SendPacket(COMMAND.SERVER_DISCONNECTED, maker);
+
                             //socket.Disconnect(false);
-                            SocketAsyncEventArgs dis = new SocketAsyncEventArgs();
-                            dis.Completed += new EventHandler<SocketAsyncEventArgs>(Dis);
-                            socket.DisconnectAsync(dis);
+                            //SocketAsyncEventArgs dis = new SocketAsyncEventArgs();
+                            //dis.Completed += new EventHandler<SocketAsyncEventArgs>(Dis);
+                            //socket.DisconnectAsync(dis);
                         }
 
                         break;
@@ -236,11 +252,6 @@ namespace ChatClient
                         break;
                     }
             }
-        }
-
-        private void Dis(object sender, SocketAsyncEventArgs args)
-        {
-            MessageBox.Show("서버 접속 종료됨");
         }
     }
 }

@@ -16,6 +16,7 @@ namespace ChatServer
     public enum COMMAND : int
     {
         SERVER_CONNECTED = 1,
+        SERVER_DISCONNECTED,
 
         SET_USER_ID,
         SET_USER_ID_DONE,
@@ -24,9 +25,7 @@ namespace ChatServer
         CREATE_ROOM_DONE,
 
         SEND_CHAT_MSG,
-        RECEIVE_CHAT_MSG,
-
-        SERVER_DISCONNECTED
+        RECEIVE_CHAT_MSG
     }
 
     class UserToken
@@ -89,7 +88,7 @@ namespace ChatServer
             {
                 bool isComplete = true;
 
-                Socket socket = sender as Socket;
+                // Socket socket = sender as Socket;
                 receiveArgs.AcceptSocket = null;
 
                 MessageParser(args.Buffer, args.BytesTransferred);
@@ -249,6 +248,26 @@ namespace ChatServer
                         userManager.SendMsgAll(msg, this);
 
                         receiveMessageCallback(msg);
+
+                        break;
+                    }
+
+                case COMMAND.SERVER_DISCONNECTED:
+                    {
+                        // 해당 소켓에 대한 접속종료가 요청되었음.
+                        // UserManager에서 해당 토큰 삭제
+                        userManager.RemoveUserToken(this);
+                        socket.Disconnect(false);
+
+                        // 소켓 DisConnect 후 Dispose로 다 해제 해 주자
+                        socket.Dispose();
+                        receiveArgs.Dispose();
+                        sendArgs.Dispose();
+                        socket = null;
+                        receiveArgs = null;
+                        sendArgs = null;
+
+                        //receiveMessageCallback(msg);
 
                         break;
                     }

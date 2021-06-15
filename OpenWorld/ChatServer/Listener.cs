@@ -30,6 +30,7 @@ namespace ChatServer
         {
             auto = new AutoResetEvent(false);
             userManager = new UserManager();
+            userManager.serverLogCallback += ServerLogText;
 
             // 소켓 객체 초기화
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -90,6 +91,11 @@ namespace ChatServer
 
             auto.Set();
         }   
+
+        private void ServerLogText(string msg)
+        {
+            serverLogCallback(msg);
+        }
 
         private void DisplayText(string msg)
         {
