@@ -81,6 +81,7 @@ namespace ChatServer
             //token.SendMsg("Server Connet");
             token.SetUserManager(userManager);
             token.receiveMessageCallback += DisplayText;
+            token.serverLogCallback += ServerLogText;
 
 
             // 유저 컨트롤 매니저에 토큰 등록

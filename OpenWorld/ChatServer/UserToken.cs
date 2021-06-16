@@ -30,6 +30,10 @@ namespace ChatServer
 
     class UserToken
     {
+        // Send가 꼬이지 않도록 춘자처리할 큐
+        private Queue<PacketMaker> packetQueue;
+        private object lockQueueObj;
+
         // Connet된 소켓 객체
         public Socket socket;
         // 수신할 이벤트 객체
@@ -53,8 +57,10 @@ namespace ChatServer
         // 저장할 버퍼
         private byte[] receiveBuffers = new byte[4096];
 
-        
 
+        // 서버 로그 콜백
+        public delegate void ServerLogCallBack(string msg);
+        public ServerLogCallBack serverLogCallback;
 
         // 메세지를 받으면 화면에 표시해주기 위한 콜백
         public delegate void ReceiveMessageCallBack(string msg);
@@ -69,6 +75,10 @@ namespace ChatServer
             receiveArgs.SetBuffer(buffer, 0, buffer.Length);
 
             sendArgs = new SocketAsyncEventArgs();
+            sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>(SendComplete);
+
+            packetQueue = new Queue<PacketMaker>();
+            lockQueueObj = new object();
         }
 
         public void ReceiveStart()
@@ -103,6 +113,32 @@ namespace ChatServer
             if (args.LastOperation == SocketAsyncOperation.Disconnect)
             {
                 System.Windows.Forms.MessageBox.Show("Client Disconnect");
+            }
+        }
+
+        private void SendComplete(object sender, SocketAsyncEventArgs args)
+        {
+            // 직전에 보낸놈이 send가 아니면 이상한것이므로
+            if (args.LastOperation != SocketAsyncOperation.Send)
+            {
+                // 로그를 찍고 다시보내보자
+                serverLogCallback("Send LastOperation Error");
+                StartSend();
+
+                return;
+            }
+
+            // 완료 되고서 들어올 것이므로 방금 사용한 패킷 제거
+            packetQueue.Dequeue();
+
+            lock (lockQueueObj)
+            {
+                // 큐에 아직 데이터가 남아있다면
+                if (packetQueue.Count > 0)
+                {
+                    // 다시 보내자
+                    StartSend();
+                }
             }
         }
 
@@ -176,8 +212,6 @@ namespace ChatServer
 
         public void SendMsg(string msg)
         {
-            //byte[] buffer = Encoding.UTF8.GetBytes(msg);
-
             PacketMaker maker = new PacketMaker();
             maker.SetMsgLength(Encoding.UTF8.GetByteCount(msg));
             maker.SetCommand((int)COMMAND.RECEIVE_CHAT_MSG);
@@ -194,22 +228,57 @@ namespace ChatServer
         // 패킷 전송
         public void SendPacket(COMMAND command, PacketMaker packet)
         {
-            switch (command)
+            lock (lockQueueObj)
             {
-                case COMMAND.SET_USER_ID_DONE:
-                    sendArgs.AcceptSocket = null;
-                    sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
-                    socket.SendAsync(sendArgs);
+                // 큐에 데이터가 없다면 추가하고 패킷을 보내자
+                if (packetQueue.Count == 0)
+                {
+                    packetQueue.Enqueue(packet);
+                    StartSend();
 
-                    break;
+                    return;
+                }
 
-                case COMMAND.RECEIVE_CHAT_MSG:
-                    sendArgs.AcceptSocket = null;
-                    sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
-                    socket.SendAsync(sendArgs);
-
-                    break;
+                // 큐에 데이터가 있다면 넣기만 하자
+                packetQueue.Enqueue(packet);
             }
+        }
+
+        private void StartSend()
+        {
+            lock (lockQueueObj)
+            {
+                bool isComplete = true;
+
+                // 체크를 큐가 들어있는지로 하므로 끝나기 전까지 dequeue 금지
+                PacketMaker maker = packetQueue.Peek();
+
+                // 데이터를 보내자
+                sendArgs.AcceptSocket = null;
+                sendArgs.SetBuffer(maker.dataBuffer, 0, maker.currentPos);
+                isComplete = socket.SendAsync(sendArgs);
+                if (!isComplete)
+                {
+                    SendComplete(socket, sendArgs);
+                }
+            }
+
+            //switch (command)
+            //{
+            //    case COMMAND.SET_USER_ID_DONE:
+            //        sendArgs.AcceptSocket = null;
+            //        sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
+            //        socket.SendAsync(sendArgs);
+
+            //        break;
+
+            //    case COMMAND.RECEIVE_CHAT_MSG:
+            //        sendArgs.AcceptSocket = null;
+            //        sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
+            //        socket.SendAsync(sendArgs);
+
+            //        break;
+            //}
         }
 
         // 패킷 수신
@@ -228,6 +297,9 @@ namespace ChatServer
                             maker.SetIntData(1);
                             maker.SetStringData(msg);
                             userID = msg;
+
+                            serverLogCallback(userID + "님이 접속하셨습니다.");
+                            userManager.SendMsgAll(userID + "님이 접속하셨습니다.", this);
                         }
                         else
                         {
@@ -244,16 +316,26 @@ namespace ChatServer
 
                 case COMMAND.SEND_CHAT_MSG:
                     {
-                        string msg = Encoding.UTF8.GetString(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND), totalByteLength);
-                        userManager.SendMsgAll(msg, this);
+                        StringBuilder builder = new StringBuilder();
+                        builder.Append(userID);
+                        builder.Append(" : ");
+                        builder.Append(Encoding.UTF8.GetString(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND), totalByteLength));
+                        
+                        userManager.SendMsgAll(builder.ToString(), this);
 
-                        receiveMessageCallback(msg);
+                        receiveMessageCallback(builder.ToString());
+
+                        builder.Clear();
 
                         break;
                     }
 
                 case COMMAND.SERVER_DISCONNECTED:
                     {
+                        // 아이디로 접속을 했다면
+                        if (!string.IsNullOrEmpty(userID))
+                            userManager.SendMsgAll(userID + "님이 접속을 종료하였습니다.", this);
+
                         // 해당 소켓에 대한 접속종료가 요청되었음.
                         // UserManager에서 해당 토큰 삭제
                         userManager.RemoveUserToken(this);

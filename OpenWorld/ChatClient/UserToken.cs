@@ -31,6 +31,10 @@ namespace ChatClient
 
     class UserToken
     {
+        // Send가 꼬이지 않도록 춘자처리할 큐
+        private Queue<PacketMaker> packetQueue;
+        private object lockQueueObj;
+
         // Connet된 소켓 객체
         public Socket socket;
         // 수신할 이벤트 객체
@@ -66,6 +70,10 @@ namespace ChatClient
             receiveArgs.SetBuffer(buffer, 0, buffer.Length);
 
             sendArgs = new SocketAsyncEventArgs();
+            sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>(SendComplete);
+
+            packetQueue = new Queue<PacketMaker>();
+            lockQueueObj = new object();
         }
 
         public void ReceiveStart()
@@ -101,6 +109,31 @@ namespace ChatClient
                 if (!isComplete)
                 {
                     ReceivecComplete(socket, receiveArgs);
+                }
+            }
+        }
+
+        private void SendComplete(object sender, SocketAsyncEventArgs args)
+        {
+            // 직전에 보낸놈이 send가 아니면 이상한것이므로
+            if (args.LastOperation != SocketAsyncOperation.Send)
+            {
+                // 다시보낸다
+                StartSend();
+
+                return;
+            }
+
+            // 완료 되고서 들어올 것이므로 방금 사용한 패킷 제거
+            packetQueue.Dequeue();
+
+            lock (lockQueueObj)
+            {
+                // 큐에 아직 데이터가 남아있다면
+                if (packetQueue.Count > 0)
+                {
+                    // 다시 보내자
+                    StartSend();
                 }
             }
         }
@@ -176,33 +209,68 @@ namespace ChatClient
         // 패킷 전송
         public void SendPacket(COMMAND command, PacketMaker packet)
         {
-            switch (command)
+            lock (lockQueueObj)
             {
-                case COMMAND.SET_USER_ID:
-                    //userID = Encoding.UTF8.GetString(packet.dataBuffer,
-                    //    Defines.HEADERSIZE + Defines.COMMAND,
-                    //    packet.currentPos - (Defines.HEADERSIZE + Defines.COMMAND));
+                // 큐에 데이터가 없다면 추가하고 패킷을 보내자
+                if (packetQueue.Count == 0)
+                {
+                    packetQueue.Enqueue(packet);
+                    StartSend();
 
-                    sendArgs.AcceptSocket = null;
-                    sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
-                    socket.SendAsync(sendArgs);
+                    return;
+                }
 
-                    break;
-
-                case COMMAND.SEND_CHAT_MSG:
-                    sendArgs.AcceptSocket = null;
-                    sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
-                    socket.SendAsync(sendArgs);
-
-                    break;
-
-                case COMMAND.SERVER_DISCONNECTED:
-                    sendArgs.AcceptSocket = null;
-                    sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
-                    socket.SendAsync(sendArgs);
-
-                    break;
+                // 큐에 데이터가 있다면 넣기만 하자
+                packetQueue.Enqueue(packet);
             }
+        }
+
+        private void StartSend()
+        {
+            lock (lockQueueObj)
+            {
+                bool isComplete = true;
+
+                // 체크를 큐가 들어있는지로 하므로 끝나기 전까지 dequeue 금지
+                PacketMaker maker = packetQueue.Peek();
+
+                // 데이터를 보내자
+                sendArgs.AcceptSocket = null;
+                sendArgs.SetBuffer(maker.dataBuffer, 0, maker.currentPos);
+                isComplete = socket.SendAsync(sendArgs);
+                if (!isComplete)
+                {
+                    SendComplete(socket, sendArgs);
+                }
+            }
+
+            //switch (command)
+            //{
+            //    case COMMAND.SET_USER_ID:
+            //        //userID = Encoding.UTF8.GetString(packet.dataBuffer,
+            //        //    Defines.HEADERSIZE + Defines.COMMAND,
+            //        //    packet.currentPos - (Defines.HEADERSIZE + Defines.COMMAND));
+
+            //        sendArgs.AcceptSocket = null;
+            //        sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
+            //        socket.SendAsync(sendArgs);
+
+            //        break;
+
+            //    case COMMAND.SEND_CHAT_MSG:
+            //        sendArgs.AcceptSocket = null;
+            //        sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
+            //        socket.SendAsync(sendArgs);
+
+            //        break;
+
+            //    case COMMAND.SERVER_DISCONNECTED:
+            //        sendArgs.AcceptSocket = null;
+            //        sendArgs.SetBuffer(packet.dataBuffer, 0, packet.currentPos);
+            //        socket.SendAsync(sendArgs);
+
+            //        break;
+            //}
         }
 
         // 패킷 수신
@@ -217,7 +285,7 @@ namespace ChatClient
 
                         if (check == 1)
                         {
-                            MessageBox.Show(msg);
+                            MessageBox.Show(msg + " 아이디로 접속되었습니다.");
                             userID = msg;
                             settingIDCallback();
                         }

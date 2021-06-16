@@ -13,6 +13,7 @@ namespace ChatClient
     public partial class MainForm : Form
     {
         Sender sender1;
+        string userID = string.Empty;
 
         public MainForm()
         {
@@ -46,6 +47,8 @@ namespace ChatClient
         {
             StringBuilder builder = new StringBuilder();
             builder.Append(ReceiveTextBox.Text);
+            builder.Append(userID);
+            builder.Append(" : ");
             builder.Append(SendTextBox.Text);
             builder.Append(Environment.NewLine);
 
@@ -72,6 +75,8 @@ namespace ChatClient
             maker.SetMsgLength(Encoding.UTF8.GetByteCount(textBox1.Text));
             maker.SetCommand((int)COMMAND.SET_USER_ID);
             maker.SetStringData(textBox1.Text);
+
+            userID = textBox1.Text;
 
             sender1.SendPacket(COMMAND.SET_USER_ID, maker);
         }

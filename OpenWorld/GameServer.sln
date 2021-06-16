@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SegyunGameServer", "SegyunGameServer\SegyunGameServer.csproj", "{7955F32A-56EA-4D52-A61C-8B99DC8FE3E8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkServiceLibrary", "..\NetworkServiceLibrary\NetworkServiceLibrary\NetworkServiceLibrary\NetworkServiceLibrary.csproj", "{73F7EC95-B4FF-49DD-BAB9-4E77A6C0EAC1}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatServer", "ChatServer\ChatServer.csproj", "{0D2F69EF-3DC1-4EFE-9A48-9F0E3F629481}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatClient", "ChatClient\ChatClient.csproj", "{0A7D4975-509F-43CB-99FF-6D3C8D7A04D5}"
@@ -17,14 +13,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7955F32A-56EA-4D52-A61C-8B99DC8FE3E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7955F32A-56EA-4D52-A61C-8B99DC8FE3E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7955F32A-56EA-4D52-A61C-8B99DC8FE3E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7955F32A-56EA-4D52-A61C-8B99DC8FE3E8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{73F7EC95-B4FF-49DD-BAB9-4E77A6C0EAC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{73F7EC95-B4FF-49DD-BAB9-4E77A6C0EAC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{73F7EC95-B4FF-49DD-BAB9-4E77A6C0EAC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{73F7EC95-B4FF-49DD-BAB9-4E77A6C0EAC1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0D2F69EF-3DC1-4EFE-9A48-9F0E3F629481}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0D2F69EF-3DC1-4EFE-9A48-9F0E3F629481}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D2F69EF-3DC1-4EFE-9A48-9F0E3F629481}.Release|Any CPU.ActiveCfg = Release|Any CPU
