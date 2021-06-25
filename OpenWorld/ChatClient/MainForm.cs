@@ -26,6 +26,8 @@ namespace ChatClient
             sender1.receiveMessageCallback += DisplayText;
             sender1.connectDoneCallBack += ConnectDone;
             sender1.settingIDDoneCallBack += SettingIDDone;
+            sender1.settingRoomListCallback += SettingRoomList;
+            sender1.createRoomCallback += CreateRoom;
             //sender1.Start("127.0.0.1", 8888, 10);
         }
 
@@ -96,9 +98,81 @@ namespace ChatClient
                             SendTextBox.Enabled = true;
                             SendTextBox.Visible = true;
 
+                            CreateRoomButton.Enabled = true;
+                            CreateRoomButton.Visible = true;
+
+                            JoinRoomButton.Enabled = true;
+                            JoinRoomButton.Visible = true;
+
+                            //SendButton.Enabled = true;
+                            //SendButton.Visible = true;
+                        }));
+        }
+
+        private void SettingRoomList(string msg)
+        {
+            Invoke(new Action(
+                        delegate ()
+                        {
+                            string[] data = msg.Split('#');
+
+                            // rooms의 0번째는 무조건 총 방의 개수이다.
+                            RoomCountAndRoomName.Text = "현재 생성된 방의 수 : " + data[0];
+
+                            if (data[0] != "0")
+                            {
+                                for (int i = 1; i < data.Length; i++)
+                                {
+                                    ReceiveTextBox.AppendText(data[i]);
+                                }
+                            }
+                        }));
+        }
+
+        private void CreateRoom_Click(object sender, EventArgs e)
+        {
+            PacketMaker maker = new PacketMaker();
+            maker.SetMsgLength(Encoding.UTF8.GetByteCount(SendTextBox.Text));
+            maker.SetCommand((int)COMMAND.CREATE_ROOM);
+            maker.SetStringData(SendTextBox.Text);
+
+            sender1.SendPacket(COMMAND.CREATE_ROOM, maker);
+
+            SendTextBox.Text = string.Empty;
+        }
+
+        private void CreateRoom(string msg)
+        {
+            Invoke(new Action(
+                        delegate ()
+                        {
+                            string[] data = msg.Split('#');
+
+                            // rooms의 0번째는 무조건 총 방의 개수이다.
+                            RoomCountAndRoomName.Text = msg;
+
+                            CreateRoomButton.Enabled = false;
+                            CreateRoomButton.Visible = false;
+
+                            JoinRoomButton.Enabled = false;
+                            JoinRoomButton.Visible = false;
+
                             SendButton.Enabled = true;
                             SendButton.Visible = true;
                         }));
+        }
+
+        private void JoinRoomButton_Click(object sender, EventArgs e)
+        {
+            PacketMaker maker = new PacketMaker();
+            maker.SetMsgLength(BitConverter.GetBytes(int.Parse(SendTextBox.Text)).Length);
+            maker.SetCommand((int)COMMAND.JOIN_ROOM);
+            maker.SetIntData(int.Parse(SendTextBox.Text));
+            //maker.SetStringData(SendTextBox.Text);
+
+            sender1.SendPacket(COMMAND.JOIN_ROOM, maker);
+
+            SendTextBox.Text = string.Empty;
         }
     }
 }

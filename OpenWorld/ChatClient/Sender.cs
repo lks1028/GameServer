@@ -25,7 +25,15 @@ namespace ChatClient
         public delegate void SettingIDDoneCallBack();
         public SettingIDDoneCallBack settingIDDoneCallBack;
 
-        private object lockObj = new object();
+        // 룸 리스트 정보를 가져올때 사용하는 콜백
+        public delegate void SettingRoomListCallBack(string msg);
+        public SettingRoomListCallBack settingRoomListCallback;
+
+        // 룸을 생성한 후콜백
+        public delegate void CreateRoomCallBack(string msg);
+        public CreateRoomCallBack createRoomCallback;
+
+        private readonly object lockObj = new object();
 
         public void Start(string host, int port, int backlog)
         {
@@ -55,6 +63,8 @@ namespace ChatClient
             token.socket = sender as Socket;
             token.receiveMessageCallback += DisplayText;
             token.settingIDCallback += SettingIDCallBack;
+            token.settingRoomCallback += SettingRoomCallBack;
+            token.createRoomCallback += CreateRoom;
             token.ReceiveStart();
 
             connectDoneCallBack();
@@ -73,6 +83,16 @@ namespace ChatClient
         private void SettingIDCallBack()
         {
             settingIDDoneCallBack();
+        }
+
+        private void SettingRoomCallBack(string msg)
+        {
+            settingRoomListCallback(msg);
+        }
+
+        private void CreateRoom(string msg)
+        {
+            createRoomCallback(msg);
         }
     }
 }

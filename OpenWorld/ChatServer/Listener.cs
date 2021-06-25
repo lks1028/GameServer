@@ -15,6 +15,7 @@ namespace ChatServer
         private Socket socket;
 
         private UserManager userManager;
+        private RoomManager roomManager;
 
         private AutoResetEvent auto;
 
@@ -31,6 +32,8 @@ namespace ChatServer
             auto = new AutoResetEvent(false);
             userManager = new UserManager();
             userManager.serverLogCallback += ServerLogText;
+
+            roomManager = new RoomManager();
 
             // 소켓 객체 초기화
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -80,6 +83,7 @@ namespace ChatServer
             token.ReceiveStart();
             //token.SendMsg("Server Connet");
             token.SetUserManager(userManager);
+            token.SetRoomManager(roomManager);
             token.receiveMessageCallback += DisplayText;
             token.serverLogCallback += ServerLogText;
 

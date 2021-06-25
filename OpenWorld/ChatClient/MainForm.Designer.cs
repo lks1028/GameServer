@@ -35,12 +35,16 @@ namespace ChatClient
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
+            this.textBox2 = new System.Windows.Forms.TextBox();
+            this.RoomCountAndRoomName = new System.Windows.Forms.Label();
+            this.CreateRoomButton = new System.Windows.Forms.Button();
+            this.JoinRoomButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // ReceiveTextBox
             // 
             this.ReceiveTextBox.Enabled = false;
-            this.ReceiveTextBox.Location = new System.Drawing.Point(12, 12);
+            this.ReceiveTextBox.Location = new System.Drawing.Point(12, 38);
             this.ReceiveTextBox.Multiline = true;
             this.ReceiveTextBox.Name = "ReceiveTextBox";
             this.ReceiveTextBox.ReadOnly = true;
@@ -51,7 +55,7 @@ namespace ChatClient
             // SendTextBox
             // 
             this.SendTextBox.Enabled = false;
-            this.SendTextBox.Location = new System.Drawing.Point(12, 417);
+            this.SendTextBox.Location = new System.Drawing.Point(12, 443);
             this.SendTextBox.Name = "SendTextBox";
             this.SendTextBox.Size = new System.Drawing.Size(615, 21);
             this.SendTextBox.TabIndex = 1;
@@ -60,7 +64,7 @@ namespace ChatClient
             // SendButton
             // 
             this.SendButton.Enabled = false;
-            this.SendButton.Location = new System.Drawing.Point(646, 408);
+            this.SendButton.Location = new System.Drawing.Point(646, 434);
             this.SendButton.Name = "SendButton";
             this.SendButton.Size = new System.Drawing.Size(142, 30);
             this.SendButton.TabIndex = 2;
@@ -71,14 +75,14 @@ namespace ChatClient
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(250, 190);
+            this.textBox1.Location = new System.Drawing.Point(250, 216);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(108, 21);
             this.textBox1.TabIndex = 3;
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(382, 184);
+            this.button1.Location = new System.Drawing.Point(382, 210);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(142, 30);
             this.button1.TabIndex = 4;
@@ -89,17 +93,65 @@ namespace ChatClient
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(248, 175);
+            this.label1.Location = new System.Drawing.Point(248, 201);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(89, 12);
             this.label1.TabIndex = 5;
             this.label1.Text = "서버접속아이디";
             // 
+            // textBox2
+            // 
+            this.textBox2.Enabled = false;
+            this.textBox2.Location = new System.Drawing.Point(794, 38);
+            this.textBox2.Multiline = true;
+            this.textBox2.Name = "textBox2";
+            this.textBox2.ReadOnly = true;
+            this.textBox2.Size = new System.Drawing.Size(169, 389);
+            this.textBox2.TabIndex = 6;
+            this.textBox2.Visible = false;
+            // 
+            // RoomCountAndRoomName
+            // 
+            this.RoomCountAndRoomName.AutoSize = true;
+            this.RoomCountAndRoomName.Location = new System.Drawing.Point(12, 23);
+            this.RoomCountAndRoomName.Name = "RoomCountAndRoomName";
+            this.RoomCountAndRoomName.Size = new System.Drawing.Size(101, 12);
+            this.RoomCountAndRoomName.TabIndex = 7;
+            this.RoomCountAndRoomName.Text = "방개수또는방이름";
+            // 
+            // CreateRoomButton
+            // 
+            this.CreateRoomButton.Enabled = false;
+            this.CreateRoomButton.Location = new System.Drawing.Point(646, 470);
+            this.CreateRoomButton.Name = "CreateRoomButton";
+            this.CreateRoomButton.Size = new System.Drawing.Size(142, 30);
+            this.CreateRoomButton.TabIndex = 8;
+            this.CreateRoomButton.Text = "방 생성";
+            this.CreateRoomButton.UseVisualStyleBackColor = true;
+            this.CreateRoomButton.Visible = false;
+            this.CreateRoomButton.Click += new System.EventHandler(this.CreateRoom_Click);
+            // 
+            // JoinRoomButton
+            // 
+            this.JoinRoomButton.Enabled = false;
+            this.JoinRoomButton.Location = new System.Drawing.Point(646, 506);
+            this.JoinRoomButton.Name = "JoinRoomButton";
+            this.JoinRoomButton.Size = new System.Drawing.Size(142, 30);
+            this.JoinRoomButton.TabIndex = 9;
+            this.JoinRoomButton.Text = "방 접속";
+            this.JoinRoomButton.UseVisualStyleBackColor = true;
+            this.JoinRoomButton.Visible = false;
+            this.JoinRoomButton.Click += new System.EventHandler(this.JoinRoomButton_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(809, 450);
+            this.ClientSize = new System.Drawing.Size(1133, 586);
+            this.Controls.Add(this.JoinRoomButton);
+            this.Controls.Add(this.CreateRoomButton);
+            this.Controls.Add(this.RoomCountAndRoomName);
+            this.Controls.Add(this.textBox2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.textBox1);
@@ -122,6 +174,10 @@ namespace ChatClient
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.Label RoomCountAndRoomName;
+        private System.Windows.Forms.Button CreateRoomButton;
+        private System.Windows.Forms.Button JoinRoomButton;
     }
 }
 
