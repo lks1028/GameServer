@@ -61,5 +61,17 @@ namespace ChatServer
                 user.SendMsg(msg);
             }
         }
+
+        public void SendPacketAll(COMMAND command, PacketMaker packet)
+        {
+            foreach (var user in tokenList)
+            {
+                //// 같으면 넘긴다
+                //if (user == token)
+                //    continue;
+
+                user.SendPacket(command, packet);
+            }
+        }
     }
 }

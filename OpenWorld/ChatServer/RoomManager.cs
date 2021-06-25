@@ -49,5 +49,13 @@ namespace ChatServer
                 room.SendMsgAll(msg, token);
             }
         }
+
+        public void SendPacketAll(int roomID, COMMAND command, PacketMaker packet)
+        {
+            if (roomDic.TryGetValue(roomID, out Room room))
+            {
+                room.SendPacketAll(command, packet);
+            }
+        }
     }
 }

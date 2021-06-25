@@ -515,8 +515,10 @@ namespace ChatServer
                     {
                         // 접속할 룸 ID
                         roomID = BitConverter.ToInt32(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND));
+                        Room room;
+
                         // 접속할 룸을 찾아서 해당 유저를 추가한다
-                        if (roomManager.GetRoomDic().TryGetValue(roomID, out Room room))
+                        if (roomManager.GetRoomDic().TryGetValue(roomID, out room))
                             room.AddUser(this);
 
                         StringBuilder builder = new StringBuilder();
@@ -527,6 +529,7 @@ namespace ChatServer
                         roomManager.SendMsgAll(roomID, builder.ToString(), this);
 
 
+                        // 접속완료 메세지 보내기
                         builder.Clear();
                         builder.Append(roomID);
                         builder.Append("#");
@@ -541,13 +544,12 @@ namespace ChatServer
                             builder.Append("|");
                         }
 
-                        // 접속 완료
                         PacketMaker maker = new PacketMaker();
                         maker.SetMsgLength(Encoding.UTF8.GetByteCount(builder.ToString()));
                         maker.SetCommand((int)COMMAND.JOIN_ROOM_DONE);
                         maker.SetStringData(builder.ToString());
 
-                        SendPacket(COMMAND.JOIN_ROOM_DONE, maker);
+                        roomManager.SendPacketAll(roomID, COMMAND.JOIN_ROOM_DONE, maker);
 
                         break;
                     }
