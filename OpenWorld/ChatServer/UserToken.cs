@@ -508,6 +508,35 @@ namespace ChatServer
 
                         SendPacket(COMMAND.CREATE_ROOM_DONE, maker);
 
+
+                        // 해당 유저를 제외하고 방 갱신 패킷을 보내야함
+                        builder.Clear();
+                        builder.Append(roomManager.GetRoomDic().Count);
+                        builder.Append("#");
+
+                        foreach (var data in roomManager.GetRoomDic())
+                        {
+                            builder.Append(data.Value.GetRoomName());
+                            builder.Append("^");
+                            builder.Append(data.Value.GetRoomID());
+                            builder.Append("^");
+                            builder.Append(data.Value.GetRoomUserList().Count);
+                            builder.Append("|");
+                        }
+
+                        if (builder.Length != 0)
+                            builder.Remove(builder.Length - 1, 1);
+
+                        string test = builder.ToString();
+
+                        // 방의 수가 몇이되든 상관없으므로 패킷 생성해서 보내기
+                        maker = new PacketMaker();
+                        maker.SetMsgLength(Encoding.UTF8.GetByteCount(builder.ToString()));
+                        maker.SetCommand((int)COMMAND.GET_ROOM_DONE);
+                        maker.SetStringData(builder.ToString());
+
+                        userManager.SendPacketAll(COMMAND.CREATE_ROOM_DONE, maker, this);
+
                         break;
                     }
 

@@ -50,6 +50,30 @@ namespace ChatServer
             }
         }
 
+        public void SendPacketAll(COMMAND command, PacketMaker packet)
+        {
+            foreach (var user in tokenList)
+            {
+                //// 같으면 넘긴다
+                //if (user == token)
+                //    continue;
+
+                user.SendPacket(command, packet);
+            }
+        }
+
+        public void SendPacketAll(COMMAND command, PacketMaker packet, UserToken token)
+        {
+            foreach (var user in tokenList)
+            {
+                // 같으면 넘긴다
+                if (user == token)
+                    continue;
+
+                user.SendPacket(command, packet);
+            }
+        }
+
         public bool FindUserID(string ID)
         {
             // ID를 가지고 있는 token이 없으면 false, 있으면 true

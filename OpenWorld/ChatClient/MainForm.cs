@@ -121,6 +121,7 @@ namespace ChatClient
 
                             // rooms의 0번째는 무조건 총 방의 개수이다.
                             RoomCountAndRoomName.Text = "현재 생성된 방의 수 : " + data[0];
+                            RoomListBox.Text = string.Empty;
 
                             if (data[0] != "0")
                             {
