@@ -41,6 +41,9 @@ namespace ChatClient
             this.JoinRoomButton = new System.Windows.Forms.Button();
             this.RoomUserCount = new System.Windows.Forms.Label();
             this.RoomListBox = new System.Windows.Forms.TextBox();
+            this.ExitRoomButton = new System.Windows.Forms.Button();
+            this.CreateRoomTextBox = new System.Windows.Forms.TextBox();
+            this.JoinRoomTextBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // ReceiveTextBox
@@ -117,9 +120,8 @@ namespace ChatClient
             this.RoomCountAndRoomName.AutoSize = true;
             this.RoomCountAndRoomName.Location = new System.Drawing.Point(12, 23);
             this.RoomCountAndRoomName.Name = "RoomCountAndRoomName";
-            this.RoomCountAndRoomName.Size = new System.Drawing.Size(101, 12);
+            this.RoomCountAndRoomName.Size = new System.Drawing.Size(0, 12);
             this.RoomCountAndRoomName.TabIndex = 7;
-            this.RoomCountAndRoomName.Text = "방개수또는방이름";
             // 
             // CreateRoomButton
             // 
@@ -150,9 +152,8 @@ namespace ChatClient
             this.RoomUserCount.AutoSize = true;
             this.RoomUserCount.Location = new System.Drawing.Point(801, 23);
             this.RoomUserCount.Name = "RoomUserCount";
-            this.RoomUserCount.Size = new System.Drawing.Size(97, 12);
+            this.RoomUserCount.Size = new System.Drawing.Size(0, 12);
             this.RoomUserCount.TabIndex = 10;
-            this.RoomUserCount.Text = "접속한 유저 수 : ";
             // 
             // RoomListBox
             // 
@@ -165,11 +166,44 @@ namespace ChatClient
             this.RoomListBox.TabIndex = 11;
             this.RoomListBox.Visible = false;
             // 
+            // ExitRoomButton
+            // 
+            this.ExitRoomButton.Enabled = false;
+            this.ExitRoomButton.Location = new System.Drawing.Point(794, 434);
+            this.ExitRoomButton.Name = "ExitRoomButton";
+            this.ExitRoomButton.Size = new System.Drawing.Size(142, 30);
+            this.ExitRoomButton.TabIndex = 12;
+            this.ExitRoomButton.Text = "방 나가기";
+            this.ExitRoomButton.UseVisualStyleBackColor = true;
+            this.ExitRoomButton.Visible = false;
+            this.ExitRoomButton.Click += new System.EventHandler(this.ExitRoomButton_Click);
+            // 
+            // CreateRoomTextBox
+            // 
+            this.CreateRoomTextBox.Enabled = false;
+            this.CreateRoomTextBox.Location = new System.Drawing.Point(12, 476);
+            this.CreateRoomTextBox.Name = "CreateRoomTextBox";
+            this.CreateRoomTextBox.Size = new System.Drawing.Size(615, 21);
+            this.CreateRoomTextBox.TabIndex = 13;
+            this.CreateRoomTextBox.Visible = false;
+            // 
+            // JoinRoomTextBox
+            // 
+            this.JoinRoomTextBox.Enabled = false;
+            this.JoinRoomTextBox.Location = new System.Drawing.Point(12, 512);
+            this.JoinRoomTextBox.Name = "JoinRoomTextBox";
+            this.JoinRoomTextBox.Size = new System.Drawing.Size(615, 21);
+            this.JoinRoomTextBox.TabIndex = 14;
+            this.JoinRoomTextBox.Visible = false;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(985, 551);
+            this.Controls.Add(this.JoinRoomTextBox);
+            this.Controls.Add(this.CreateRoomTextBox);
+            this.Controls.Add(this.ExitRoomButton);
             this.Controls.Add(this.RoomListBox);
             this.Controls.Add(this.RoomUserCount);
             this.Controls.Add(this.JoinRoomButton);
@@ -204,6 +238,9 @@ namespace ChatClient
         private System.Windows.Forms.Button JoinRoomButton;
         private System.Windows.Forms.Label RoomUserCount;
         private System.Windows.Forms.TextBox RoomListBox;
+        private System.Windows.Forms.Button ExitRoomButton;
+        private System.Windows.Forms.TextBox CreateRoomTextBox;
+        private System.Windows.Forms.TextBox JoinRoomTextBox;
     }
 }
 

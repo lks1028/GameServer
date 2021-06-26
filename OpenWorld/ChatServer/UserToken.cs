@@ -30,6 +30,9 @@ namespace ChatServer
         JOIN_ROOM,
         JOIN_ROOM_DONE,
 
+        EXIT_ROOM,
+        EXIT_ROOM_DONE,
+
         SEND_CHAT_MSG,
         RECEIVE_CHAT_MSG
     }
@@ -447,8 +450,6 @@ namespace ChatServer
                         if (builder.Length != 0)
                             builder.Remove(builder.Length - 1, 1);
 
-                        string test = builder.ToString();
-
                         // 방의 수가 몇이되든 상관없으므로 패킷 생성해서 보내기
                         PacketMaker maker = new PacketMaker();
                         maker.SetMsgLength(Encoding.UTF8.GetByteCount(builder.ToString()));
@@ -464,7 +465,7 @@ namespace ChatServer
                     {
                         // 방 이름 가져오기.
                         string roomName = Encoding.UTF8.GetString(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND), totalByteLength);
-                        roomID = roomManager.GetRoomDic().Count;
+                        roomID = roomManager.CreateRoomID();
 
                         Room room = new Room();
                         room.SetRoomName(roomName);
@@ -472,7 +473,7 @@ namespace ChatServer
                         // 동일한 아이디의 방이 있으면 실패처리
                         // 여기선 간단하게 현재 카운트를 아이디로하자...
                         // 이대로 만들면 문제가 발생할 여지가 충분하다. 중간에 방이 삭제되면 어떻게 할 것인가?
-                        if (roomManager.FindRoomID(roomID))
+                        if (roomManager.CheckRoomID(roomID))
                         {
 
                         }
@@ -482,7 +483,7 @@ namespace ChatServer
                         room.AddUser(this);
 
                         // RoomManager에 셋팅
-                        roomManager.SetRoom(roomID, room);
+                        roomManager.AddRoom(roomID, room);
 
 
                         // 생성한 방에 대한 정보를 클라에 다시 넘겨주자
@@ -527,8 +528,6 @@ namespace ChatServer
                         if (builder.Length != 0)
                             builder.Remove(builder.Length - 1, 1);
 
-                        string test = builder.ToString();
-
                         // 방의 수가 몇이되든 상관없으므로 패킷 생성해서 보내기
                         maker = new PacketMaker();
                         maker.SetMsgLength(Encoding.UTF8.GetByteCount(builder.ToString()));
@@ -543,7 +542,15 @@ namespace ChatServer
                 case COMMAND.JOIN_ROOM:
                     {
                         // 접속할 룸 ID
-                        roomID = BitConverter.ToInt32(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND));
+                        string roomName = Encoding.UTF8.GetString(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND), totalByteLength);
+                        roomID = roomManager.FindRoomID(roomName);
+
+                        // 클라에 실패에 대한 메세지를 보내주자
+                        if (roomID == -1)
+                        {
+
+                        }
+
                         Room room;
 
                         // 접속할 룸을 찾아서 해당 유저를 추가한다
@@ -579,6 +586,65 @@ namespace ChatServer
                         maker.SetStringData(builder.ToString());
 
                         roomManager.SendPacketAll(roomID, COMMAND.JOIN_ROOM_DONE, maker);
+
+                        break;
+                    }
+
+                case COMMAND.EXIT_ROOM:
+                    {
+                        Room room;
+
+                        // 접속할 룸을 찾아서 해당 유저를 제거한다
+                        if (roomManager.GetRoomDic().TryGetValue(roomID, out room))
+                            room.RemoveUser(this);
+
+                        StringBuilder builder = new StringBuilder();
+                        PacketMaker maker = new PacketMaker();
+
+                        // 룸에 접속한 유저가 있다면
+                        if (room.GetRoomUserList().Count != 0)
+                        {
+                            // 접속종료를 다른 클라에 보내주자
+                            builder.Append(userID);
+                            builder.Append("님이 접속을 종료하셨습니다.");
+                            roomManager.SendMsgAll(roomID, builder.ToString(), this);
+
+                            // 접속이 종료되어 남은 리스트 보내주기
+                            builder.Clear();
+                            builder.Append(roomID);
+                            builder.Append("#");
+                            builder.Append(roomManager.GetRoomName(roomID));
+                            builder.Append("#");
+                            builder.Append(room.GetRoomUserList().Count);
+                            builder.Append("#");
+
+                            foreach (var data in room.GetRoomUserList())
+                            {
+                                builder.Append(data.userID);
+                                builder.Append("|");
+                            }
+
+                            maker.SetMsgLength(Encoding.UTF8.GetByteCount(builder.ToString()));
+                            maker.SetCommand((int)COMMAND.JOIN_ROOM_DONE);
+                            maker.SetStringData(builder.ToString());
+
+                            // 지금은 방에서 나간 유저에게도 보내지만 메소드를 하나 더 추가해서 자기 자신에겐 안보내는 것도 만들면 좋을듯
+                            roomManager.SendPacketAll(roomID, COMMAND.JOIN_ROOM_DONE, maker);
+                        }
+                        // 유저가 없다면
+                        else
+                        {
+                            // 방 목록에서 지우고
+                            roomManager.RemoveRoom(roomID);
+                        }
+
+                        // 종료되었다고 알려주자
+                        maker = new PacketMaker();
+                        maker.SetMsgLength(BitConverter.GetBytes(1).Length);
+                        maker.SetCommand((int)COMMAND.EXIT_ROOM_DONE);
+                        maker.SetIntData(1);
+
+                        SendPacket(COMMAND.EXIT_ROOM_DONE, maker);
 
                         break;
                     }

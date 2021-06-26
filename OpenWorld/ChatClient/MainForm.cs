@@ -107,6 +107,12 @@ namespace ChatClient
                             JoinRoomButton.Enabled = true;
                             JoinRoomButton.Visible = true;
 
+                            CreateRoomTextBox.Enabled = true;
+                            CreateRoomTextBox.Visible = true;
+
+                            JoinRoomTextBox.Enabled = true;
+                            JoinRoomTextBox.Visible = true;
+
                             //SendButton.Enabled = true;
                             //SendButton.Visible = true;
                         }));
@@ -121,7 +127,9 @@ namespace ChatClient
 
                             // rooms의 0번째는 무조건 총 방의 개수이다.
                             RoomCountAndRoomName.Text = "현재 생성된 방의 수 : " + data[0];
+                            RoomUserCount.Text = string.Empty;
                             RoomListBox.Text = string.Empty;
+                            UserListBox.Text = string.Empty;
 
                             if (data[0] != "0")
                             {
@@ -139,13 +147,13 @@ namespace ChatClient
         private void CreateRoom_Click(object sender, EventArgs e)
         {
             PacketMaker maker = new PacketMaker();
-            maker.SetMsgLength(Encoding.UTF8.GetByteCount(SendTextBox.Text));
+            maker.SetMsgLength(Encoding.UTF8.GetByteCount(CreateRoomTextBox.Text));
             maker.SetCommand((int)COMMAND.CREATE_ROOM);
-            maker.SetStringData(SendTextBox.Text);
+            maker.SetStringData(CreateRoomTextBox.Text);
 
             sender1.SendPacket(COMMAND.CREATE_ROOM, maker);
 
-            SendTextBox.Text = string.Empty;
+            CreateRoomTextBox.Text = string.Empty;
         }
 
         private void CreateRoom(string msg)
@@ -182,20 +190,42 @@ namespace ChatClient
                             SendButton.Enabled = true;
                             SendButton.Visible = true;
 
+                            ExitRoomButton.Enabled = true;
+                            ExitRoomButton.Visible = true;
+
                             UserListBox.Enabled = true;
                             UserListBox.Visible = true;
+
+                            CreateRoomTextBox.Enabled = false;
+                            CreateRoomTextBox.Visible = false;
+
+                            JoinRoomTextBox.Enabled = false;
+                            JoinRoomTextBox.Visible = false;
                         }));
         }
 
         private void JoinRoomButton_Click(object sender, EventArgs e)
         {
             PacketMaker maker = new PacketMaker();
-            maker.SetMsgLength(BitConverter.GetBytes(int.Parse(SendTextBox.Text)).Length);
+            maker.SetMsgLength(Encoding.UTF8.GetByteCount(JoinRoomTextBox.Text));
             maker.SetCommand((int)COMMAND.JOIN_ROOM);
-            maker.SetIntData(int.Parse(SendTextBox.Text));
+            maker.SetStringData(JoinRoomTextBox.Text);
             //maker.SetStringData(SendTextBox.Text);
 
             sender1.SendPacket(COMMAND.JOIN_ROOM, maker);
+
+            JoinRoomTextBox.Text = string.Empty;
+        }
+
+        private void ExitRoomButton_Click(object sender, EventArgs e)
+        {
+            PacketMaker maker = new PacketMaker();
+            maker.SetMsgLength(BitConverter.GetBytes(1).Length);
+            maker.SetCommand((int)COMMAND.EXIT_ROOM);
+            maker.SetIntData(1);
+            //maker.SetStringData(SendTextBox.Text);
+
+            sender1.SendPacket(COMMAND.EXIT_ROOM, maker);
 
             SendTextBox.Text = string.Empty;
         }

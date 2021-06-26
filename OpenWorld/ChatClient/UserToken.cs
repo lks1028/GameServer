@@ -31,6 +31,9 @@ namespace ChatClient
         JOIN_ROOM,
         JOIN_ROOM_DONE,
 
+        EXIT_ROOM,
+        EXIT_ROOM_DONE,
+
         SEND_CHAT_MSG,
         RECEIVE_CHAT_MSG
     }
@@ -424,6 +427,22 @@ namespace ChatClient
                         string msg = Encoding.UTF8.GetString(receiveBuffers, (Defines.HEADERSIZE + Defines.COMMAND), totalByteLength);
 
                         createRoomCallback(msg);
+
+                        break;
+                    }
+
+                case COMMAND.EXIT_ROOM_DONE:
+                    {
+                        // 방 리스트를 가져오자
+                        PacketMaker maker = new PacketMaker();
+                        maker.SetMsgLength(BitConverter.GetBytes(1).Length);
+                        maker.SetCommand((int)COMMAND.GET_ROOM);
+                        maker.SetIntData(1);
+
+                        SendPacket(COMMAND.GET_ROOM, maker);
+
+                        // 방 로비 화면으로 넘겨주자
+                        settingIDCallback();
 
                         break;
                     }
